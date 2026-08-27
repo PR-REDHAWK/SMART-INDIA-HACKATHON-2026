@@ -15,7 +15,7 @@ export default function Topbar() {
       </div>
       
       <div className="flex items-center gap-3">
-        <div className="bg-glass-fill border border-glass-borderSoft backdrop-blur-[20px] rounded-full py-2.5 px-4.5 flex items-center gap-2.5 text-text-mid">
+        <div className="bg-glass-fill border border-glass-borderSoft backdrop-blur-[20px] rounded-full py-2.5 px-4.5 flex items-center gap-2.5 text-text-mid hover:bg-glass-fill2 focus-within:ring-2 focus-within:ring-violet-500/50 focus-within:border-transparent transition-all duration-200">
           <Search size={15} className="opacity-60" />
           <input 
             type="text" 

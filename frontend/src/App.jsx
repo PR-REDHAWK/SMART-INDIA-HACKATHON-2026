@@ -68,10 +68,10 @@ function App() {
       <div className="blob blob-2"></div>
       <div className="blob blob-3"></div>
       
-      <div className="flex min-h-screen relative z-10">
+      <div className="flex flex-col md:flex-row min-h-screen relative z-10">
         <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
         
-        <main className="flex-1 flex flex-col px-[34px] py-[26px] pb-[60px] gap-[22px] max-w-[1400px] mx-auto w-full">
+        <main className="flex-1 flex flex-col px-4 py-4 md:px-[34px] md:py-[26px] pb-24 md:pb-[60px] gap-[22px] max-w-[1400px] mx-auto w-full">
           {renderContent()}
         </main>
       </div>

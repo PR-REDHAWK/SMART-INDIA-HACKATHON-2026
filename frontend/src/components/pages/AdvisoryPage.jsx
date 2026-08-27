@@ -79,7 +79,7 @@ export default function AdvisoryPage() {
           <button 
             onClick={() => setLang("en")}
             className={clsx(
-              "font-mono text-[10.5px] px-3.5 py-1 rounded-full cursor-pointer transition-colors",
+              "font-mono text-[10.5px] px-3.5 py-1 rounded-full cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50",
               lang === "en" ? "bg-text-hi text-white font-semibold" : "text-text-mid hover:text-text-hi"
             )}
           >
@@ -88,7 +88,7 @@ export default function AdvisoryPage() {
           <button 
             onClick={() => setLang("hi")}
             className={clsx(
-              "font-mono text-[10.5px] px-3.5 py-1 rounded-full cursor-pointer transition-colors",
+              "font-mono text-[10.5px] px-3.5 py-1 rounded-full cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50",
               lang === "hi" ? "bg-text-hi text-white font-semibold" : "text-text-mid hover:text-text-hi"
             )}
           >

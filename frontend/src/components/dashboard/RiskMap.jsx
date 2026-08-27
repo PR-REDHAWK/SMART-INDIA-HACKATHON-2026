@@ -1,16 +1,23 @@
-import React from "react";
+import React, { useState } from "react";
 import clsx from "clsx";
 
 export default function RiskMap() {
+  const [timeframe, setTimeframe] = useState("7D");
+
   return (
     <div className="glass-panel p-[22px] flex flex-col gap-3.5 h-full min-h-[300px]">
       <div className="flex justify-between items-center">
         <span className="panel-label">Map View · Rainfall Probability Overlay</span>
         <div className="flex gap-1.5">
-          <MapToggle active>7D</MapToggle>
-          <MapToggle>14D</MapToggle>
-          <MapToggle>21D</MapToggle>
-          <MapToggle>30D</MapToggle>
+          {["7D", "14D", "21D", "30D"].map((t) => (
+            <MapToggle 
+              key={t} 
+              active={timeframe === t} 
+              onClick={() => setTimeframe(t)}
+            >
+              {t}
+            </MapToggle>
+          ))}
         </div>
       </div>
       
@@ -63,14 +70,17 @@ export default function RiskMap() {
   );
 }
 
-function MapToggle({ children, active }) {
+function MapToggle({ children, active, onClick }) {
   return (
-    <button className={clsx(
-      "font-mono text-[10.5px] px-3 py-1.5 rounded-full border tracking-[.04em] cursor-pointer transition-colors",
-      active 
-        ? "bg-gradient-to-br from-violet-500 to-violet-soft text-white border-transparent" 
-        : "bg-glass-fill2 border-glass-borderSoft text-text-mid hover:text-text-hi"
-    )}>
+    <button 
+      onClick={onClick}
+      className={clsx(
+        "font-mono text-[10.5px] px-3 py-1.5 rounded-full border tracking-[.04em] cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50",
+        active 
+          ? "bg-gradient-to-br from-violet-500 to-violet-soft text-white border-transparent shadow-[0_2px_8px_rgba(139,124,246,0.2)]" 
+          : "bg-glass-fill2 border-glass-borderSoft text-text-mid hover:text-text-hi"
+      )}
+    >
       {children}
     </button>
   );

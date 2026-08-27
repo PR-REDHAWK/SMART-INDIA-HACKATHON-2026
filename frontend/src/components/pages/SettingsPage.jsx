@@ -94,7 +94,7 @@ export default function SettingsPage() {
                     key={l}
                     onClick={() => setLang(l)}
                     className={clsx(
-                      "font-mono text-[10px] px-3 py-1 rounded-full cursor-pointer transition-colors border",
+                      "font-mono text-[10px] px-3 py-1 rounded-full cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 border",
                       lang === l 
                         ? "bg-text-hi text-white border-transparent" 
                         : "bg-glass-fill2 border-glass-borderSoft text-text-mid hover:text-text-hi"
@@ -115,7 +115,7 @@ export default function SettingsPage() {
                     key={d}
                     onClick={() => setDensity(d)}
                     className={clsx(
-                      "font-mono text-[10px] px-3 py-1 rounded-full cursor-pointer transition-colors border",
+                      "font-mono text-[10px] px-3 py-1 rounded-full cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 border",
                       density === d 
                         ? "bg-text-hi text-white border-transparent" 
                         : "bg-glass-fill2 border-glass-borderSoft text-text-mid hover:text-text-hi"
@@ -144,7 +144,7 @@ function SelectBox({ label, defaultValue, options }) {
       <label className="text-[10px] font-mono tracking-[.06em] uppercase text-text-lo">{label}</label>
       <select 
         defaultValue={defaultValue} 
-        className="w-full bg-glass-fill2 border border-glass-borderSoft px-3 py-2 text-[13.5px] text-text-hi rounded-xl outline-none"
+        className="w-full bg-glass-fill2 border border-glass-borderSoft px-3 py-2 text-[13.5px] text-text-hi rounded-xl outline-none transition-all duration-200 hover:bg-glass-fill focus:ring-2 focus:ring-violet-500/50 focus:border-transparent cursor-pointer"
       >
         {options.map((opt) => (
           <option key={opt} value={opt}>{opt}</option>
@@ -161,7 +161,7 @@ function ToggleRow({ label, active, onClick }) {
       <button 
         onClick={onClick}
         className={clsx(
-          "w-10 h-6.5 rounded-full p-1 cursor-pointer transition-colors duration-250 relative",
+          "w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/50 relative",
           active ? "bg-teal-500" : "bg-black/10"
         )}
       >

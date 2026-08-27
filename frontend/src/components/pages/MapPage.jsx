@@ -47,9 +47,9 @@ export default function MapPage() {
                   key={t}
                   onClick={() => setTimeframe(t)}
                   className={clsx(
-                    "font-mono text-[10.5px] px-3.5 py-1.5 rounded-full border tracking-[.04em] cursor-pointer transition-colors",
+                    "font-mono text-[10.5px] px-3.5 py-1.5 rounded-full border tracking-[.04em] cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50",
                     timeframe === t 
-                      ? "bg-gradient-to-br from-violet-500 to-violet-soft text-white border-transparent" 
+                      ? "bg-gradient-to-br from-violet-500 to-violet-soft text-white border-transparent shadow-[0_2px_8px_rgba(139,124,246,0.2)]" 
                       : "bg-glass-fill2 border-glass-borderSoft text-text-mid hover:text-text-hi"
                   )}
                 >
@@ -64,9 +64,9 @@ export default function MapPage() {
                   key={o}
                   onClick={() => setOverlay(o)}
                   className={clsx(
-                    "font-mono text-[10.5px] px-3.5 py-1.5 rounded-full border tracking-[.04em] cursor-pointer transition-colors",
+                    "font-mono text-[10.5px] px-3.5 py-1.5 rounded-full border tracking-[.04em] cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/50",
                     overlay === o 
-                      ? "bg-gradient-to-br from-teal-500 to-teal-500/80 text-white border-transparent" 
+                      ? "bg-gradient-to-br from-teal-500 to-teal-500/80 text-white border-transparent shadow-[0_2px_8px_rgba(8,145,178,0.2)]" 
                       : "bg-glass-fill2 border-glass-borderSoft text-text-mid hover:text-text-hi"
                   )}
                 >
@@ -94,7 +94,7 @@ export default function MapPage() {
               <button
                 key={region.id}
                 onClick={() => setSelectedRegion(region)}
-                className="absolute z-10 flex flex-col items-center gap-1 group cursor-pointer"
+                className="absolute z-10 flex flex-col items-center gap-1 group cursor-pointer transform transition-all duration-200 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 rounded-lg p-0.5"
                 style={{ top: region.top, left: region.left }}
               >
                 <div className="relative flex items-center justify-center">
