@@ -3,16 +3,25 @@ import clsx from "clsx";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-export default function MapPage() {
+export default function MapPage({
+  selectedStateId,
+  selectedDistrictId,
+  onStateChange,
+  onDistrictChange
+}) {
   const [timeframe, setTimeframe] = useState("7D");
   const [overlay, setOverlay] = useState("ONSET");
   const [regions, setRegions] = useState([]);
-  const [selectedRegion, setSelectedRegion] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const mapContainerRef = useRef(null);
   const leafletMapRef = useRef(null);
   const markersRef = useRef({});
+
+  // Derive active selected region from props
+  const selectedRegion = regions.find(r => r.id === selectedDistrictId) || 
+                         regions.find(r => r.id === selectedStateId) || 
+                         null;
 
   // 1. Fetch live data from FastAPI backend
   useEffect(() => {
@@ -35,6 +44,8 @@ export default function MapPage() {
           return {
             id: r.id,
             name: r.name,
+            level: r.level,
+            parent_id: r.parent_id,
             parent: r.level === "District" ? "District" : "State",
             lat: r.lat,
             lng: r.lng,
@@ -47,10 +58,6 @@ export default function MapPage() {
         });
         
         setRegions(formattedRegions);
-        // Default to first region if available
-        if (formattedRegions.length > 0) {
-          setSelectedRegion(formattedRegions[0]);
-        }
         setLoading(false);
       })
       .catch(err => {
@@ -124,9 +131,14 @@ export default function MapPage() {
         </div>
       `, { direction: 'top', offset: [0, -5] });
 
-      // Click to select
+      // Click to select - updates global location context
       marker.on('click', () => {
-        setSelectedRegion(region);
+        if (region.level === "District") {
+          onStateChange(region.parent_id);
+          onDistrictChange(region.id);
+        } else {
+          onStateChange(region.id);
+        }
       });
 
       markersRef.current[region.id] = marker;
@@ -137,7 +149,7 @@ export default function MapPage() {
       map.setView([selectedRegion.lat, selectedRegion.lng], 6, { animate: true });
     }
 
-  }, [regions, overlay, selectedRegion]);
+  }, [regions, overlay, selectedRegion, onStateChange, onDistrictChange]);
 
   if (loading) {
     return (

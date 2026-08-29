@@ -110,7 +110,14 @@ function App() {
           </>
         );
       case "map":
-        return <MapPage />;
+        return (
+          <MapPage 
+            selectedStateId={selectedStateId}
+            selectedDistrictId={selectedDistrictId}
+            onStateChange={handleStateChange}
+            onDistrictChange={handleDistrictChange}
+          />
+        );
       case "data-sources":
         return <DataSourcesPage />;
       case "model":
