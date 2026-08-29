@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import clsx from "clsx";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 export default function MapPage() {
   const [timeframe, setTimeframe] = useState("7D");
@@ -8,11 +10,16 @@ export default function MapPage() {
   const [selectedRegion, setSelectedRegion] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const mapContainerRef = useRef(null);
+  const leafletMapRef = useRef(null);
+  const markersRef = useRef({});
+
+  // 1. Fetch live data from FastAPI backend
   useEffect(() => {
     fetch('/api/v1/regions')
       .then(res => res.json())
       .then(data => {
-        const formattedRegions = data.map((r, i) => {
+        const formattedRegions = data.map((r) => {
           const latestForecast = r.forecasts && r.forecasts.length > 0 ? r.forecasts[0] : {};
           
           const onset = Math.round((latestForecast.onset_prob || 0) * 100);
@@ -20,40 +27,30 @@ export default function MapPage() {
           const heavyRain = Math.round((latestForecast.heavy_rain_prob || 0) * 100);
 
           let risk = "LOW";
-          let color = "var(--color-teal-500)";
-          if (heavyRain > 75) { risk = "EXTREME"; color = "var(--color-rose-500)"; }
-          else if (heavyRain > 50) { risk = "HIGH"; color = "var(--color-orange-400)"; }
-          else if (heavyRain > 25) { risk = "MODERATE"; color = "var(--color-amber-500)"; }
-
-          // Distribute SVG pin positions
-          const positions = [
-            { top: "32%", left: "28%" },
-            { top: "55%", left: "62%" },
-            { top: "68%", left: "38%" },
-            { top: "25%", left: "50%" },
-            { top: "45%", left: "45%" },
-            { top: "60%", left: "20%" },
-            { top: "75%", left: "60%" },
-            { top: "15%", left: "70%" },
-          ];
-          const pos = positions[i % positions.length];
+          let color = "#10b981"; // Emerald-500
+          if (heavyRain > 75) { risk = "EXTREME"; color = "#ef4444"; } // Rose-500
+          else if (heavyRain > 50) { risk = "HIGH"; color = "#fb923c"; } // Orange-400
+          else if (heavyRain > 25) { risk = "MODERATE"; color = "#f59e0b"; } // Amber-500
 
           return {
             id: r.id,
             name: r.name,
-            parent: r.level === "District" ? "State" : "India",
+            parent: r.level === "District" ? "District" : "State",
+            lat: r.lat,
+            lng: r.lng,
             onset,
             breakRisk,
             heavyRain,
             risk,
-            color,
-            top: pos.top,
-            left: pos.left
+            color
           };
         });
         
         setRegions(formattedRegions);
-        setSelectedRegion(formattedRegions[0]);
+        // Default to first region if available
+        if (formattedRegions.length > 0) {
+          setSelectedRegion(formattedRegions[0]);
+        }
         setLoading(false);
       })
       .catch(err => {
@@ -62,10 +59,90 @@ export default function MapPage() {
       });
   }, []);
 
+  // 2. Initialize Leaflet Map Instance
+  useEffect(() => {
+    if (mapContainerRef.current && !leafletMapRef.current) {
+      // Center on India
+      leafletMapRef.current = L.map(mapContainerRef.current, {
+        center: [20.5937, 78.9629],
+        zoom: 5,
+        zoomControl: false,
+        attributionControl: false
+      });
+
+      // Scale-invariant high-contrast light tiles
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 20
+      }).addTo(leafletMapRef.current);
+
+      // Re-position zoom controls to bottom-right
+      L.control.zoom({ position: 'bottomright' }).addTo(leafletMapRef.current);
+    }
+
+    return () => {
+      if (leafletMapRef.current) {
+        leafletMapRef.current.remove();
+        leafletMapRef.current = null;
+      }
+    };
+  }, []);
+
+  // 3. Update Markers & Pan Map on Selected Region Change
+  useEffect(() => {
+    if (!leafletMapRef.current || regions.length === 0) return;
+
+    const map = leafletMapRef.current;
+
+    // Clear previous markers
+    Object.values(markersRef.current).forEach(marker => marker.remove());
+    markersRef.current = {};
+
+    regions.forEach(region => {
+      if (!region.lat || !region.lng) return;
+
+      let displayVal = 0;
+      if (overlay === "ONSET") displayVal = region.onset;
+      else if (overlay === "BREAK SPELL") displayVal = region.breakRisk;
+      else displayVal = region.heavyRain;
+
+      const isSelected = selectedRegion?.id === region.id;
+
+      // Draw custom glowing circle marker
+      const marker = L.circleMarker([region.lat, region.lng], {
+        radius: isSelected ? 12 : 8,
+        fillColor: region.color,
+        color: isSelected ? "#8b5cf6" : "#ffffff", // Highlight selected with violet border
+        weight: isSelected ? 3 : 1.5,
+        fillOpacity: isSelected ? 0.95 : 0.75,
+      }).addTo(map);
+
+      // Hover tooltip
+      marker.bindTooltip(`
+        <div style="font-family: monospace; font-size: 11px; padding: 2px;">
+          <strong>${region.name}</strong> (${region.parent})<br/>
+          ${overlay}: ${displayVal}%
+        </div>
+      `, { direction: 'top', offset: [0, -5] });
+
+      // Click to select
+      marker.on('click', () => {
+        setSelectedRegion(region);
+      });
+
+      markersRef.current[region.id] = marker;
+    });
+
+    // Auto-focus selected region
+    if (selectedRegion && selectedRegion.lat && selectedRegion.lng) {
+      map.setView([selectedRegion.lat, selectedRegion.lng], 6, { animate: true });
+    }
+
+  }, [regions, overlay, selectedRegion]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[500px]">
-        <div className="font-mono text-violet-500 animate-pulse">Loading live intelligence...</div>
+        <div className="font-mono text-violet-500 animate-pulse">Loading live geographical intelligence...</div>
       </div>
     );
   }
@@ -76,17 +153,17 @@ export default function MapPage() {
       <div>
         <div className="font-mono text-[11.5px] tracking-[.16em] text-teal-500 uppercase mb-1.5 flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-teal-500 shadow-[0_0_10px_#0891b2] animate-pulse"></span>
-          Interactive Map
+          Geospatial Radar
         </div>
         <div className="flex justify-between items-end flex-wrap gap-4">
           <div>
             <h1 className="font-display font-semibold text-[27px] tracking-[-0.01em] text-text-hi">
               MONSOON RISK MAP
             </h1>
-            <p className="text-text-mid text-[14px]">Hyper-local precipitation and monsoon risk (Live Data)</p>
+            <p className="text-text-mid text-[14px]">Zoom, pan, and hover circles to analyze climate risk anomalies</p>
           </div>
           <div className="bg-glass-fill border border-glass-borderSoft backdrop-blur-[20px] rounded-full py-2 px-4.5 text-[13.5px] text-text-hi font-medium">
-            Live AI Forecast
+            Live OpenStreetMap Feed
           </div>
         </div>
       </div>
@@ -95,7 +172,7 @@ export default function MapPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-stretch">
         
         {/* Map Container */}
-        <div className="glass-panel p-5 flex flex-col gap-4 min-h-[450px]">
+        <div className="glass-panel p-5 flex flex-col gap-4 min-h-[500px]">
           {/* Controls */}
           <div className="flex justify-between items-center flex-wrap gap-3">
             <div className="flex gap-1.5">
@@ -133,52 +210,22 @@ export default function MapPage() {
             </div>
           </div>
 
-          {/* Interactive Map Visual */}
-          <div className="flex-1 rounded-[16px] relative overflow-hidden border border-glass-borderSoft bg-gradient-to-br from-[#eef7ff] via-[#dcecfb] to-[#f8fbff] min-h-[350px]">
-            {/* Grid */}
-            <div className="absolute inset-0 opacity-40 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:30px_30px]"></div>
-            
-            {/* SVG Background */}
-            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 900 430" preserveAspectRatio="none">
-              <path d="M300 58 L450 68 L520 50 L600 90 L680 80 L720 120 L760 180 L730 240 L780 290 L710 330 L680 370 L600 400 L550 360 L500 320 L480 280 L420 250 L380 220 L350 190 L320 140 L280 110 Z" fill="#dfeaf5" stroke="#7c9bb9" strokeWidth="3"/>
-              <path d="M300 58 L450 68 L520 50 L600 90 L560 140 L500 150 L420 130 L360 110 L300 110 Z" fill="var(--color-teal-500)" fillOpacity=".3" stroke="#fff" strokeWidth="1.5"/>
-              <path d="M360 110 L420 130 L500 150 L560 140 L600 180 L580 230 L520 220 L450 200 L400 160 Z" fill="var(--color-amber-500)" fillOpacity=".35" stroke="#fff" strokeWidth="1.5"/>
-              <path d="M600 180 L650 170 L720 120 L760 180 L730 240 L780 290 L710 330 L680 280 L640 240 L580 230 Z" fill="var(--color-rose-500)" fillOpacity=".3" stroke="#fff" strokeWidth="1.5"/>
-            </svg>
-
-            {/* Region Pins */}
-            {regions.map((region) => (
-              <button
-                key={region.id}
-                onClick={() => setSelectedRegion(region)}
-                className="absolute z-10 flex flex-col items-center gap-1 group cursor-pointer transform transition-all duration-200 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 rounded-lg p-0.5"
-                style={{ top: region.top, left: region.left }}
-              >
-                <div className="relative flex items-center justify-center">
-                  <div className="absolute w-3.5 h-3.5 rounded-full animate-ping opacity-60" style={{ backgroundColor: region.color }}></div>
-                  <div className="w-3 h-3 rounded-full relative z-10 shadow-[0_0_0_4px_rgba(255,255,255,0.4)]" style={{ backgroundColor: region.color }}></div>
-                </div>
-                <div className={clsx(
-                  "font-mono text-[9px] backdrop-blur-[12px] py-0.5 px-2 rounded-[6px] border whitespace-nowrap mt-1 transition-all",
-                  selectedRegion?.id === region.id 
-                    ? "bg-text-hi text-white border-transparent scale-105" 
-                    : "bg-white/80 text-text-hi border-glass-borderSoft group-hover:scale-105"
-                )}>
-                  {region.name} • {overlay === "ONSET" ? `${region.onset}%` : overlay === "BREAK SPELL" ? `${region.breakRisk}%` : `${region.heavyRain}%`}
-                </div>
-              </button>
-            ))}
-          </div>
+          {/* Interactive Map Visual (Leaflet Container) */}
+          <div 
+            ref={mapContainerRef} 
+            className="w-full h-[400px] rounded-[16px] border border-glass-borderSoft bg-[#f8fbff] relative" 
+            style={{ zIndex: 0 }}
+          ></div>
 
           {/* Map Legend */}
           <div className="flex gap-4 font-mono text-[10px] text-text-lo justify-between items-center">
             <div className="flex gap-4">
-              <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-teal-500"></i> Low Risk</span>
-              <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-amber-500"></i> Moderate</span>
-              <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-orange-400"></i> High</span>
-              <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-rose-500"></i> Extreme</span>
+              <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full" style={{ backgroundColor: "#10b981" }}></i> Low Risk</span>
+              <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full" style={{ backgroundColor: "#f59e0b" }}></i> Moderate</span>
+              <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full" style={{ backgroundColor: "#fb923c" }}></i> High</span>
+              <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full" style={{ backgroundColor: "#ef4444" }}></i> Extreme</span>
             </div>
-            <div className="text-[9.5px]">Click markers to inspect details</div>
+            <div className="text-[9.5px]">Click or hover nodes to inspect block-level advisories</div>
           </div>
         </div>
 
@@ -191,7 +238,7 @@ export default function MapPage() {
                 {selectedRegion.name}
               </h3>
               <span className="text-text-mid text-[12.5px] font-sans block mb-5">
-                {selectedRegion.parent}
+                {selectedRegion.parent} Info
               </span>
 
               <div className="flex flex-col gap-4.5 border-t border-glass-borderSoft pt-5">
