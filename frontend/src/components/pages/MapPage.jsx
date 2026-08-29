@@ -61,7 +61,7 @@ export default function MapPage() {
 
   // 2. Initialize Leaflet Map Instance
   useEffect(() => {
-    if (mapContainerRef.current && !leafletMapRef.current) {
+    if (!loading && mapContainerRef.current && !leafletMapRef.current) {
       // Center on India
       leafletMapRef.current = L.map(mapContainerRef.current, {
         center: [20.5937, 78.9629],
@@ -85,7 +85,7 @@ export default function MapPage() {
         leafletMapRef.current = null;
       }
     };
-  }, []);
+  }, [loading]);
 
   // 3. Update Markers & Pan Map on Selected Region Change
   useEffect(() => {
