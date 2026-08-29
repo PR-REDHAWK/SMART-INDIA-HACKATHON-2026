@@ -1,5 +1,6 @@
 import React from "react";
 import { MapPin } from "lucide-react";
+import SearchableSelect from "../common/SearchableSelect";
 
 export default function Topbar({
   states = [],
@@ -21,35 +22,25 @@ export default function Topbar({
         </h1>
       </div>
       
-      <div className="flex items-center gap-3">
-        {/* State Selection Dropdown */}
-        <div className="bg-glass-fill border border-glass-borderSoft backdrop-blur-[20px] rounded-full py-2.5 px-4.5 flex items-center gap-2 text-text-mid hover:bg-glass-fill2 focus-within:ring-2 focus-within:ring-violet-500/50 focus-within:border-transparent transition-all duration-200">
-          <MapPin size={14} className="opacity-70 text-violet-500" />
-          <select 
-            value={selectedStateId || ""}
-            onChange={(e) => onStateChange(e.target.value)}
-            className="bg-transparent border-none outline-none text-text-hi text-[13.5px] font-sans cursor-pointer"
-          >
-            <option value="" disabled className="text-text-lo">Select State</option>
-            {states.map((s) => (
-              <option key={s.id} value={s.id} className="bg-[#f0f4f8] text-text-hi">{s.name}</option>
-            ))}
-          </select>
+      <div className="flex items-center gap-4.5">
+        {/* State selection searchable dropdown */}
+        <div className="flex items-center gap-2">
+          <MapPin size={14} className="text-violet-500 shrink-0" />
+          <SearchableSelect 
+            options={states}
+            value={selectedStateId}
+            onChange={onStateChange}
+            placeholder="Select State"
+          />
         </div>
 
-        {/* District Selection Dropdown */}
-        <div className="bg-glass-fill border border-glass-borderSoft backdrop-blur-[20px] rounded-full py-2.5 px-4.5 flex items-center gap-2 text-text-mid hover:bg-glass-fill2 focus-within:ring-2 focus-within:ring-violet-500/50 focus-within:border-transparent transition-all duration-200">
-          <select 
-            value={selectedDistrictId || ""}
-            onChange={(e) => onDistrictChange(e.target.value)}
-            className="bg-transparent border-none outline-none text-text-hi text-[13.5px] font-sans cursor-pointer"
-          >
-            <option value="" disabled className="text-text-lo">Select District</option>
-            {districts.map((d) => (
-              <option key={d.id} value={d.id} className="bg-[#f0f4f8] text-text-hi">{d.name}</option>
-            ))}
-          </select>
-        </div>
+        {/* District selection searchable dropdown */}
+        <SearchableSelect 
+          options={districts}
+          value={selectedDistrictId}
+          onChange={onDistrictChange}
+          placeholder="Select District"
+        />
 
         <div className="bg-glass-fill border border-glass-borderSoft backdrop-blur-[20px] rounded-full py-2.5 px-4.5 text-[13.5px] text-text-mid font-sans flex items-center h-full">
           Sat, 27 Sep 2024 · IST 09:00

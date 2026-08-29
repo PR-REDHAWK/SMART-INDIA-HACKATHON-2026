@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Check, Settings, ShieldCheck, MapPin, Bell, Globe, LayoutGrid } from "lucide-react";
 import clsx from "clsx";
+import SearchableSelect from "../common/SearchableSelect";
 
 export default function SettingsPage({
   states = [],
@@ -52,28 +53,22 @@ export default function SettingsPage({
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5 font-sans">
                 <label className="text-[10px] font-mono tracking-[.06em] uppercase text-text-lo">State</label>
-                <select 
-                  value={selectedStateId || ""}
-                  onChange={(e) => onStateChange(e.target.value)}
-                  className="w-full bg-glass-fill2 border border-glass-borderSoft px-3 py-2 text-[13.5px] text-text-hi rounded-xl outline-none transition-all duration-200 hover:bg-glass-fill focus:ring-2 focus:ring-violet-500/50 focus:border-transparent cursor-pointer"
-                >
-                  {states.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
+                <SearchableSelect 
+                  options={states}
+                  value={selectedStateId}
+                  onChange={onStateChange}
+                  placeholder="Select State"
+                />
               </div>
 
               <div className="flex flex-col gap-1.5 font-sans">
                 <label className="text-[10px] font-mono tracking-[.06em] uppercase text-text-lo">District</label>
-                <select 
-                  value={selectedDistrictId || ""}
-                  onChange={(e) => onDistrictChange(e.target.value)}
-                  className="w-full bg-glass-fill2 border border-glass-borderSoft px-3 py-2 text-[13.5px] text-text-hi rounded-xl outline-none transition-all duration-200 hover:bg-glass-fill focus:ring-2 focus:ring-violet-500/50 focus:border-transparent cursor-pointer"
-                >
-                  {districts.map((d) => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
-                  ))}
-                </select>
+                <SearchableSelect 
+                  options={districts}
+                  value={selectedDistrictId}
+                  onChange={onDistrictChange}
+                  placeholder="Select District"
+                />
               </div>
 
               <SelectBox label="Block" defaultValue="Block A" options={["Block A"]} />
