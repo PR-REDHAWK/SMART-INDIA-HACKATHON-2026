@@ -8,7 +8,7 @@ from app.schemas.domain import RegionResponse, RegionDetailResponse, ForecastRes
 
 router = APIRouter()
 
-@router.get("/regions", response_model=List[RegionResponse])
+@router.get("/regions", response_model=List[RegionDetailResponse])
 def get_all_regions(db: Session = Depends(get_db)):
     """Fetch all geographic regions (States, Districts, etc.)"""
     return db.query(Region).all()
