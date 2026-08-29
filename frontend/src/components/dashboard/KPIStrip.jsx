@@ -1,7 +1,16 @@
 import React from "react";
 import { Droplets, CloudRain, CloudLightning, ShieldCheck } from "lucide-react";
 
-export default function KPIStrip() {
+export default function KPIStrip({ selectedRegion }) {
+  const latestForecast = selectedRegion?.forecasts && selectedRegion.forecasts.length > 0
+    ? selectedRegion.forecasts[0]
+    : null;
+
+  const onset = latestForecast ? Math.round(latestForecast.onset_prob * 100) : 0;
+  const breakRisk = latestForecast ? Math.round(latestForecast.break_spell_risk * 100) : 0;
+  const heavyRain = latestForecast ? Math.round(latestForecast.heavy_rain_prob * 100) : 0;
+  const confidence = latestForecast ? Math.round(latestForecast.confidence * 100) : 100;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <KPICard 
@@ -10,35 +19,35 @@ export default function KPIStrip() {
         iconColor="var(--color-violet-500)"
         trendBg="rgba(52,214,196,0.14)"
         trendColor="var(--color-teal-500)"
-        trendText="▲ 4.2%"
-        value="68%"
+        trendText={onset > 50 ? "HIGH" : "MODERATE"}
+        value={`${onset}%`}
         label="Monsoon onset probability"
         barColor="var(--color-violet-500)"
-        barWidth="68%"
+        barWidth={`${onset}%`}
       />
       <KPICard 
         icon={<CloudRain size={15} />}
         iconBg="rgba(242,99,125,0.18)"
         iconColor="var(--color-rose-500)"
-        trendBg="rgba(242,99,125,0.14)"
-        trendColor="var(--color-rose-500)"
-        trendText="▲ 1.8%"
-        value="34%"
+        trendBg={breakRisk > 50 ? "rgba(242,99,125,0.14)" : "rgba(52,214,196,0.14)"}
+        trendColor={breakRisk > 50 ? "var(--color-rose-500)" : "var(--color-teal-500)"}
+        trendText={breakRisk > 50 ? "ELEVATED" : "LOW"}
+        value={`${breakRisk}%`}
         label="Break spell risk"
         barColor="var(--color-rose-500)"
-        barWidth="34%"
+        barWidth={`${breakRisk}%`}
       />
       <KPICard 
         icon={<CloudLightning size={15} />}
         iconBg="rgba(245,158,11,0.10)"
         iconColor="var(--color-amber-500)"
-        trendBg="rgba(242,184,75,0.14)"
-        trendColor="var(--color-amber-500)"
-        trendText="▲ 6.5%"
-        value="42%"
+        trendBg={heavyRain > 50 ? "rgba(242,184,75,0.14)" : "rgba(52,214,196,0.14)"}
+        trendColor={heavyRain > 50 ? "var(--color-amber-500)" : "var(--color-teal-500)"}
+        trendText={heavyRain > 50 ? "WARNING" : "LOW"}
+        value={`${heavyRain}%`}
         label="Heavy rain event"
         barColor="var(--color-amber-500)"
-        barWidth="42%"
+        barWidth={`${heavyRain}%`}
       />
       <KPICard 
         icon={<ShieldCheck size={15} />}
@@ -47,10 +56,10 @@ export default function KPIStrip() {
         trendBg="rgba(52,214,196,0.14)"
         trendColor="var(--color-teal-500)"
         trendText="STABLE"
-        value="88"
+        value={`${confidence}%`}
         label="Model confidence score"
         barColor="var(--color-teal-500)"
-        barWidth="88%"
+        barWidth={`${confidence}%`}
       />
     </div>
   );

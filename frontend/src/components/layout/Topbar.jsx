@@ -1,7 +1,14 @@
 import React from "react";
-import { Search } from "lucide-react";
+import { MapPin } from "lucide-react";
 
-export default function Topbar() {
+export default function Topbar({
+  states = [],
+  districts = [],
+  selectedStateId,
+  selectedDistrictId,
+  onStateChange,
+  onDistrictChange
+}) {
   return (
     <div className="flex items-center justify-between gap-5 flex-wrap">
       <div>
@@ -15,15 +22,35 @@ export default function Topbar() {
       </div>
       
       <div className="flex items-center gap-3">
-        <div className="bg-glass-fill border border-glass-borderSoft backdrop-blur-[20px] rounded-full py-2.5 px-4.5 flex items-center gap-2.5 text-text-mid hover:bg-glass-fill2 focus-within:ring-2 focus-within:ring-violet-500/50 focus-within:border-transparent transition-all duration-200">
-          <Search size={15} className="opacity-60" />
-          <input 
-            type="text" 
-            placeholder="Search district, state…" 
-            defaultValue="Marathwada, MH"
-            className="bg-transparent border-none outline-none text-text-hi text-[13.5px] w-[120px] font-sans placeholder-text-lo"
-          />
+        {/* State Selection Dropdown */}
+        <div className="bg-glass-fill border border-glass-borderSoft backdrop-blur-[20px] rounded-full py-2.5 px-4.5 flex items-center gap-2 text-text-mid hover:bg-glass-fill2 focus-within:ring-2 focus-within:ring-violet-500/50 focus-within:border-transparent transition-all duration-200">
+          <MapPin size={14} className="opacity-70 text-violet-500" />
+          <select 
+            value={selectedStateId || ""}
+            onChange={(e) => onStateChange(e.target.value)}
+            className="bg-transparent border-none outline-none text-text-hi text-[13.5px] font-sans cursor-pointer"
+          >
+            <option value="" disabled className="text-text-lo">Select State</option>
+            {states.map((s) => (
+              <option key={s.id} value={s.id} className="bg-[#f0f4f8] text-text-hi">{s.name}</option>
+            ))}
+          </select>
         </div>
+
+        {/* District Selection Dropdown */}
+        <div className="bg-glass-fill border border-glass-borderSoft backdrop-blur-[20px] rounded-full py-2.5 px-4.5 flex items-center gap-2 text-text-mid hover:bg-glass-fill2 focus-within:ring-2 focus-within:ring-violet-500/50 focus-within:border-transparent transition-all duration-200">
+          <select 
+            value={selectedDistrictId || ""}
+            onChange={(e) => onDistrictChange(e.target.value)}
+            className="bg-transparent border-none outline-none text-text-hi text-[13.5px] font-sans cursor-pointer"
+          >
+            <option value="" disabled className="text-text-lo">Select District</option>
+            {districts.map((d) => (
+              <option key={d.id} value={d.id} className="bg-[#f0f4f8] text-text-hi">{d.name}</option>
+            ))}
+          </select>
+        </div>
+
         <div className="bg-glass-fill border border-glass-borderSoft backdrop-blur-[20px] rounded-full py-2.5 px-4.5 text-[13.5px] text-text-mid font-sans flex items-center h-full">
           Sat, 27 Sep 2024 · IST 09:00
         </div>
