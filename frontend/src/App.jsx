@@ -90,7 +90,7 @@ function App() {
             {/* HERO ROW */}
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.35fr] gap-[22px] items-stretch">
               <HeroStatus selectedRegion={selectedDistrict || selectedState} />
-              <RiskMap />
+              <RiskMap selectedRegion={selectedDistrict || selectedState} />
             </div>
             
             {/* KPI STRIP */}
