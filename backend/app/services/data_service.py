@@ -146,7 +146,13 @@ def seed_initial_data(db: Session):
     # --- 2. Create Forecasts & Advisories ---
     all_regions = db.query(Region).all()
     for r in all_regions:
-        preds = ml_predictor.predict_for_region(r.name)
+        parent_name = None
+        if r.parent_id:
+            parent = db.query(Region).filter(Region.id == r.parent_id).first()
+            if parent:
+                parent_name = parent.name
+                
+        preds = ml_predictor.predict_for_region(r.name, parent_name=parent_name)
         
         # Add Forecast
         forecast = Forecast(
