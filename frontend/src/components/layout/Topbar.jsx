@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { MapPin } from "lucide-react";
 import SearchableSelect from "../common/SearchableSelect";
 
@@ -10,6 +10,31 @@ export default function Topbar({
   onStateChange,
   onDistrictChange
 }) {
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (date) => {
+    // Format: Sat, 27 Sep 2024
+    const datePart = date.toLocaleDateString("en-IN", {
+      weekday: "short",
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
+    // Format: 09:00:00
+    const timePart = date.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    });
+    return `${datePart} · IST ${timePart}`;
+  };
+
   return (
     <div className="flex items-center justify-between gap-5 flex-wrap">
       <div>
@@ -43,7 +68,7 @@ export default function Topbar({
         />
 
         <div className="bg-glass-fill border border-glass-borderSoft backdrop-blur-[20px] rounded-full py-2.5 px-4.5 text-[13.5px] text-text-mid font-sans flex items-center h-full">
-          Sat, 27 Sep 2024 · IST 09:00
+          {formatTime(time)}
         </div>
       </div>
     </div>
