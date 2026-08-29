@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.db.session import engine, Base, SessionLocal
 from app.models import domain # Import models so SQLAlchemy knows about them
 from app.services.data_service import seed_initial_data
+from app.api.router import router as api_router
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -28,6 +29,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include the API routes under /api/v1 prefix
+app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/")
 async def root():
