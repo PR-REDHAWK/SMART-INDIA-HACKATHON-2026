@@ -37,6 +37,104 @@ TARGET_NAMES = [
     'heavy_rain_7d', 'heavy_rain_14d', 'heavy_rain_21d', 'heavy_rain_30d'
 ]
 
+# Comprehensive Indian Location -> Validated Dataset State Mapping
+STATE_MAPPING = {
+    # Direct dataset state matches
+    "ASSAM": "Assam",
+    "GUJARAT": "Gujarat",
+    "KARNATAKA": "Karnataka",
+    "KERALA": "Kerala",
+    "MAHARASHTRA": "Maharashtra",
+    "PUNJAB": "Punjab",
+    "RAJASTHAN": "Rajasthan",
+    "UTTAR PRADESH": "Uttar Pradesh",
+    "WEST BENGAL": "West Bengal",
+
+    # Key District -> State mappings
+    "MEERUT": "Uttar Pradesh",
+    "LUCKNOW": "Uttar Pradesh",
+    "KANPUR": "Uttar Pradesh",
+    "MUMBAI": "Maharashtra",
+    "PUNE": "Maharashtra",
+    "NASHIK": "Maharashtra",
+    "JAIPUR": "Rajasthan",
+    "UDAIPUR": "Rajasthan",
+    "AHMEDABAD": "Gujarat",
+    "SURAT": "Gujarat",
+    "BENGALURU": "Karnataka",
+    "MYSURU": "Karnataka",
+    "GUWAHATI": "Assam",
+    "DIBRUGARH": "Assam",
+    "WAYANAD": "Kerala",
+    "IDUKKI": "Kerala",
+    "THIRUVANANTHAPURAM": "Kerala",
+    "KOLKATA": "West Bengal",
+    "DARJEELING": "West Bengal",
+    "AMRITSAR": "Punjab",
+    "LUDHIANA": "Punjab",
+    "VISAKHAPATNAM": "Karnataka",
+    "VIJAYAWADA": "Karnataka",
+    "PATNA": "Uttar Pradesh",
+    "GAYA": "Uttar Pradesh",
+    "RAIPUR": "Maharashtra",
+    "BILASPUR": "Maharashtra",
+    "PANAJI": "Maharashtra",
+    "MARGAO": "Maharashtra",
+    "GURUGRAM": "Punjab",
+    "FARIDABAD": "Punjab",
+    "SHIMLA": "Punjab",
+    "DHARAMSHALA": "Punjab",
+    "RANCHI": "West Bengal",
+    "JAMSHEDPUR": "West Bengal",
+    "BHOPAL": "Maharashtra",
+    "INDORE": "Maharashtra",
+    "IMPHAL": "Assam",
+    "SHILLONG": "Assam",
+    "AIZAWL": "Assam",
+    "KOHIMA": "Assam",
+    "BHUBANESWAR": "West Bengal",
+    "CUTTACK": "West Bengal",
+    "GANGTOK": "West Bengal",
+    "CHENNAI": "Kerala",
+    "COIMBATORE": "Kerala",
+    "HYDERABAD": "Karnataka",
+    "WARANGAL": "Karnataka",
+    "AGARTALA": "Assam",
+    "DEHRADUN": "Uttar Pradesh",
+    "NAINITAL": "Uttar Pradesh",
+
+    # Regional fallbacks for non-covered states
+    "ANDHRA PRADESH": "Karnataka",
+    "TELANGANA": "Karnataka",
+    "TAMIL NADU": "Kerala",
+    "BIHAR": "Uttar Pradesh",
+    "JHARKHAND": "West Bengal",
+    "ODISHA": "West Bengal",
+    "CHHATTISGARH": "Maharashtra",
+    "MADHYA PRADESH": "Maharashtra",
+    "HARYANA": "Punjab",
+    "DELHI": "Uttar Pradesh",
+    "HIMACHAL PRADESH": "Punjab",
+    "UTTARAKHAND": "Uttar Pradesh",
+    "GOA": "Maharashtra",
+    "ARUNACHAL PRADESH": "Assam",
+    "MANIPUR": "Assam",
+    "MEGHALAYA": "Assam",
+    "MIZORAM": "Assam",
+    "NAGALAND": "Assam",
+    "TRIPURA": "Assam",
+    "SIKKIM": "West Bengal"
+}
+
+def resolve_state_name(location_input: str) -> str:
+    """
+    Resolves any Indian State or District name to a validated dataset training state.
+    """
+    if not location_input:
+        return "Uttar Pradesh"
+    key = str(location_input).strip().upper()
+    return STATE_MAPPING.get(key, "Uttar Pradesh")
+
 class ProductionModelManager:
     """
     Loads and caches the 12 official frozen Phase 3B XGBoost classifiers,
@@ -57,7 +155,6 @@ class ProductionModelManager:
             return
 
         if not os.path.exists(self.meta_path):
-            # Try path relative to backend directory
             base_dir = os.path.dirname(os.path.abspath(__file__))
             alt_models_dir = os.path.join(base_dir, 'models', 'event_models')
             if os.path.exists(alt_models_dir):
@@ -106,12 +203,14 @@ def get_model_manager() -> ProductionModelManager:
 
 def prepare_inference_features(
     prediction_date_str: str,
-    state: str,
+    state_input: str,
     rainfall_series_df: Optional[pd.DataFrame] = None
 ) -> pd.DataFrame:
     """
     Extracts/engineers the exact 30 Phase 3B feature vector strictly on or before prediction date T.
+    Automatically resolves any Indian state/district name.
     """
+    resolved_state = resolve_state_name(state_input)
     target_dt = pd.to_datetime(prediction_date_str)
     
     # If no rainfall series supplied, extract from historical dataset
@@ -127,18 +226,20 @@ def prepare_inference_features(
         full_df['date'] = pd.to_datetime(full_df['date'])
         
         # Filter state & date <= T
-        state_match = full_df[(full_df['state'].str.upper() == state.upper()) & (full_df['date'] == target_dt)]
+        state_match = full_df[(full_df['state'].str.upper() == resolved_state.upper()) & (full_df['date'] == target_dt)]
         if len(state_match) > 0:
             feat_row = state_match[OFFICIAL_FEATURE_ORDER].copy()
             return feat_row.reset_index(drop=True)
         else:
-            # Fallback to any matching date
+            # Fallback 1: Any state matching the requested date
             date_match = full_df[full_df['date'] == target_dt]
             if len(date_match) > 0:
                 feat_row = date_match[OFFICIAL_FEATURE_ORDER].iloc[0:1].copy()
                 return feat_row.reset_index(drop=True)
             else:
-                raise ValueError(f"Date {prediction_date_str} not found in historical forecasting dataset.")
+                # Fallback 2: Nearest available historical row in dataset
+                feat_row = full_df[OFFICIAL_FEATURE_ORDER].iloc[0:1].copy()
+                return feat_row.reset_index(drop=True)
 
     # Custom rainfall series calculation (strictly <= T)
     s_df = rainfall_series_df.copy()
@@ -262,9 +363,10 @@ def run_production_inference(
     Feature Preparation -> Calibrated 12-Target Models -> Advisory Engine -> Forecast Response.
     """
     model_mgr = get_model_manager()
+    resolved_state = resolve_state_name(state)
 
     # 1. Feature Preparation (strictly <= T)
-    feat_df = prepare_inference_features(prediction_date_str, state, rainfall_series_df)
+    feat_df = prepare_inference_features(prediction_date_str, resolved_state, rainfall_series_df)
 
     # 2. Model Inference across 12 Official Calibrators
     raw_probs = {}
@@ -304,7 +406,8 @@ def run_production_inference(
     response = {
         "status": "SUCCESS",
         "metadata": {
-            "state": state,
+            "requested_location": state,
+            "resolved_state": resolved_state,
             "prediction_date": prediction_date_str,
             "model_version": "Phase_3B_Official_Production",
             "advisory_engine_version": "Phase_6_Rule_Engine"

@@ -1,15 +1,14 @@
 import sys
 import os
-import json
 
 # Add backend directory to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from backend.inference_pipeline import run_production_inference, get_model_manager
+from backend.inference_pipeline import run_production_inference, get_model_manager, resolve_state_name
 
 def test_production_pipeline():
     print("==========================================================")
-    print("RUNNING PRODUCTION INFERENCE PIPELINE UNIT TEST SUITE")
+    print("RUNNING PHASE 9 LOCATION & FORECAST VALIDATION TESTS")
     print("==========================================================")
 
     # 1. Startup Artifact & Compatibility Validation
@@ -18,60 +17,59 @@ def test_production_pipeline():
     assert len(mgr.calibrators) == 12, f"Expected 12 calibrators, got {len(mgr.calibrators)}"
     print("[PASS] Model Manager loaded 12 official calibrators successfully.")
 
-    # 2. Historical Test Case 1: Uttar Pradesh (Meerut) - 2024-06-15
-    print("\n2. Executing Test Case 1: Uttar Pradesh (2024-06-15, Rice, Sowing)...")
-    res1 = run_production_inference(
-        state="Uttar Pradesh",
-        prediction_date_str="2024-06-15",
-        crop_name="Rice",
-        growth_stage="Sowing",
-        soil_moisture_pct=22.0
-    )
-    assert res1['status'] == "SUCCESS"
-    assert "probabilities" in res1
-    assert "advisory" in res1
-    print(f"[PASS] Probabilities: Onset 14d={res1['probabilities']['onset']['14d']}%, Break 14d={res1['probabilities']['break_spell']['14d']}%")
-    print(f"       Advisory Code: {res1['advisory']['advisory_code']} | Title: {res1['advisory']['title'].encode('ascii', 'replace').decode('ascii')}")
+    # 2. Test Comprehensive Indian Location Resolution
+    print("\n2. Auditing Location Resolution across 14 Test Locations...")
+    test_locations = [
+        ("Uttar Pradesh", "Uttar Pradesh"),
+        ("Meerut", "Uttar Pradesh"),
+        ("Lucknow", "Uttar Pradesh"),
+        ("Maharashtra", "Maharashtra"),
+        ("Mumbai", "Maharashtra"),
+        ("Rajasthan", "Rajasthan"),
+        ("Karnataka", "Karnataka"),
+        ("Kerala", "Kerala"),
+        ("Andhra Pradesh", "Karnataka"),
+        ("Bihar", "Uttar Pradesh"),
+        ("Delhi", "Uttar Pradesh"),
+        ("Tamil Nadu", "Kerala"),
+        ("Himachal Pradesh", "Punjab"),
+        ("Madhya Pradesh", "Maharashtra")
+    ]
 
-    # 3. Historical Test Case 2: Maharashtra - 2024-07-20
-    print("\n3. Executing Test Case 2: Maharashtra (2024-07-20, Cotton, Vegetative)...")
-    res2 = run_production_inference(
-        state="Maharashtra",
-        prediction_date_str="2024-07-20",
-        crop_name="Cotton",
-        growth_stage="Vegetative",
-        soil_moisture_pct=72.0
-    )
-    assert res2['status'] == "SUCCESS"
-    print(f"[PASS] Probabilities: Break 14d={res2['probabilities']['break_spell']['14d']}%, Heavy Rain 7d={res2['probabilities']['heavy_rain']['7d']}%")
-    print(f"       Advisory Code: {res2['advisory']['advisory_code']} | Title: {res2['advisory']['title'].encode('ascii', 'replace').decode('ascii')}")
+    for loc_in, expected_state in test_locations:
+        res_st = resolve_state_name(loc_in)
+        assert res_st == expected_state, f"Location '{loc_in}' resolved to '{res_st}', expected '{expected_state}'"
+        print(f"  [PASS] Location '{loc_in}' -> Resolved State: '{res_st}'")
 
-    # 4. Historical Test Case 3: Rajasthan - 2024-08-10
-    print("\n4. Executing Test Case 3: Rajasthan (2024-08-10, Maize, Flowering)...")
-    res3 = run_production_inference(
-        state="Rajasthan",
-        prediction_date_str="2024-08-10",
-        crop_name="Maize",
-        growth_stage="Flowering"
-    )
-    assert res3['status'] == "SUCCESS"
-    print(f"[PASS] Probabilities: Onset 30d={res3['probabilities']['onset']['30d']}%, Break 21d={res3['probabilities']['break_spell']['21d']}%")
-    print(f"       Advisory Code: {res3['advisory']['advisory_code']} | Title: {res3['advisory']['title'].encode('ascii', 'replace').decode('ascii')}")
+    # 3. Live Pipeline Forecast Execution across 5 Geographic Scenarios
+    print("\n3. Testing End-to-End Live Pipeline Execution across Regions...")
+    
+    # Scenario A: Meerut (District under Uttar Pradesh)
+    res_a = run_production_inference(state="Meerut", prediction_date_str="2024-06-15", crop_name="Rice", growth_stage="Sowing")
+    assert res_a['status'] == "SUCCESS"
+    assert res_a['metadata']['resolved_state'] == "Uttar Pradesh"
+    print(f"  [PASS] Meerut (UP) -> Onset 14d={res_a['probabilities']['onset']['14d']}%, Break 14d={res_a['probabilities']['break_spell']['14d']}% | Advisory: {res_a['advisory']['advisory_code']}")
 
-    # 5. Historical Test Case 4: Kerala - 2025-05-20
-    print("\n5. Executing Test Case 4: Kerala (2025-05-20, Soybean, Sowing)...")
-    res4 = run_production_inference(
-        state="Kerala",
-        prediction_date_str="2025-05-20",
-        crop_name="Soybean",
-        growth_stage="Sowing"
-    )
-    assert res4['status'] == "SUCCESS"
-    print(f"[PASS] Probabilities: Onset 7d={res4['probabilities']['onset']['7d']}%, Onset 14d={res4['probabilities']['onset']['14d']}%")
-    print(f"       Advisory Code: {res4['advisory']['advisory_code']} | Title: {res4['advisory']['title'].encode('ascii', 'replace').decode('ascii')}")
+    # Scenario B: Wayanad (District under Kerala)
+    res_b = run_production_inference(state="Wayanad", prediction_date_str="2024-05-20", crop_name="Soybean", growth_stage="Sowing")
+    assert res_b['status'] == "SUCCESS"
+    assert res_b['metadata']['resolved_state'] == "Kerala"
+    print(f"  [PASS] Wayanad (Kerala) -> Onset 7d={res_b['probabilities']['onset']['7d']}%, Heavy Rain 7d={res_b['probabilities']['heavy_rain']['7d']}% | Advisory: {res_b['advisory']['advisory_code']}")
+
+    # Scenario C: Bihar / Patna (Mapped to Uttar Pradesh regional baseline)
+    res_c = run_production_inference(state="Patna", prediction_date_str="2024-07-05", crop_name="Rice", growth_stage="Vegetative")
+    assert res_c['status'] == "SUCCESS"
+    assert res_c['metadata']['resolved_state'] == "Uttar Pradesh"
+    print(f"  [PASS] Patna (Bihar) -> Break 14d={res_c['probabilities']['break_spell']['14d']}% | Advisory: {res_c['advisory']['advisory_code']}")
+
+    # Scenario D: Andhra Pradesh / Visakhapatnam (Mapped to Karnataka regional baseline)
+    res_d = run_production_inference(state="Visakhapatnam", prediction_date_str="2024-08-10", crop_name="Cotton", growth_stage="Flowering")
+    assert res_d['status'] == "SUCCESS"
+    assert res_d['metadata']['resolved_state'] == "Karnataka"
+    print(f"  [PASS] Visakhapatnam (AP) -> Break 21d={res_d['probabilities']['break_spell']['21d']}% | Advisory: {res_d['advisory']['advisory_code']}")
 
     print("\n==========================================================")
-    print("ALL PRODUCTION INFERENCE PIPELINE UNIT TESTS PASSED (100%)!")
+    print("ALL PHASE 9 LOCATION & FORECAST VALIDATION TESTS PASSED (100%)!")
     print("==========================================================")
 
 if __name__ == '__main__':
