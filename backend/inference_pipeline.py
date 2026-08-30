@@ -9,7 +9,7 @@ import json
 import joblib
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 
 try:
     from advisory.schemas import ForecastProbabilities, CropContext, AdvisoryOutput
@@ -37,9 +37,8 @@ TARGET_NAMES = [
     'heavy_rain_7d', 'heavy_rain_14d', 'heavy_rain_21d', 'heavy_rain_30d'
 ]
 
-# Comprehensive Indian Location -> Validated Dataset State Mapping
-STATE_MAPPING = {
-    # Direct dataset state matches
+# The 9 Validated Training States with Direct Daily Historical Records
+DIRECT_VALIDATED_STATES = {
     "ASSAM": "Assam",
     "GUJARAT": "Gujarat",
     "KARNATAKA": "Karnataka",
@@ -48,92 +47,119 @@ STATE_MAPPING = {
     "PUNJAB": "Punjab",
     "RAJASTHAN": "Rajasthan",
     "UTTAR PRADESH": "Uttar Pradesh",
-    "WEST BENGAL": "West Bengal",
-
-    # Key District -> State mappings
-    "MEERUT": "Uttar Pradesh",
-    "LUCKNOW": "Uttar Pradesh",
-    "KANPUR": "Uttar Pradesh",
-    "MUMBAI": "Maharashtra",
-    "PUNE": "Maharashtra",
-    "NASHIK": "Maharashtra",
-    "JAIPUR": "Rajasthan",
-    "UDAIPUR": "Rajasthan",
-    "AHMEDABAD": "Gujarat",
-    "SURAT": "Gujarat",
-    "BENGALURU": "Karnataka",
-    "MYSURU": "Karnataka",
-    "GUWAHATI": "Assam",
-    "DIBRUGARH": "Assam",
-    "WAYANAD": "Kerala",
-    "IDUKKI": "Kerala",
-    "THIRUVANANTHAPURAM": "Kerala",
-    "KOLKATA": "West Bengal",
-    "DARJEELING": "West Bengal",
-    "AMRITSAR": "Punjab",
-    "LUDHIANA": "Punjab",
-    "VISAKHAPATNAM": "Karnataka",
-    "VIJAYAWADA": "Karnataka",
-    "PATNA": "Uttar Pradesh",
-    "GAYA": "Uttar Pradesh",
-    "RAIPUR": "Maharashtra",
-    "BILASPUR": "Maharashtra",
-    "PANAJI": "Maharashtra",
-    "MARGAO": "Maharashtra",
-    "GURUGRAM": "Punjab",
-    "FARIDABAD": "Punjab",
-    "SHIMLA": "Punjab",
-    "DHARAMSHALA": "Punjab",
-    "RANCHI": "West Bengal",
-    "JAMSHEDPUR": "West Bengal",
-    "BHOPAL": "Maharashtra",
-    "INDORE": "Maharashtra",
-    "IMPHAL": "Assam",
-    "SHILLONG": "Assam",
-    "AIZAWL": "Assam",
-    "KOHIMA": "Assam",
-    "BHUBANESWAR": "West Bengal",
-    "CUTTACK": "West Bengal",
-    "GANGTOK": "West Bengal",
-    "CHENNAI": "Kerala",
-    "COIMBATORE": "Kerala",
-    "HYDERABAD": "Karnataka",
-    "WARANGAL": "Karnataka",
-    "AGARTALA": "Assam",
-    "DEHRADUN": "Uttar Pradesh",
-    "NAINITAL": "Uttar Pradesh",
-
-    # Regional fallbacks for non-covered states
-    "ANDHRA PRADESH": "Karnataka",
-    "TELANGANA": "Karnataka",
-    "TAMIL NADU": "Kerala",
-    "BIHAR": "Uttar Pradesh",
-    "JHARKHAND": "West Bengal",
-    "ODISHA": "West Bengal",
-    "CHHATTISGARH": "Maharashtra",
-    "MADHYA PRADESH": "Maharashtra",
-    "HARYANA": "Punjab",
-    "DELHI": "Uttar Pradesh",
-    "HIMACHAL PRADESH": "Punjab",
-    "UTTARAKHAND": "Uttar Pradesh",
-    "GOA": "Maharashtra",
-    "ARUNACHAL PRADESH": "Assam",
-    "MANIPUR": "Assam",
-    "MEGHALAYA": "Assam",
-    "MIZORAM": "Assam",
-    "NAGALAND": "Assam",
-    "TRIPURA": "Assam",
-    "SIKKIM": "West Bengal"
+    "WEST BENGAL": "West Bengal"
 }
 
-def resolve_state_name(location_input: str) -> str:
+# Comprehensive Indian Location -> Validated Dataset State Mapping & Honesty Metadata
+STATE_MAPPING = {
+    # Direct dataset state matches
+    "ASSAM": ("Assam", True),
+    "GUJARAT": ("Gujarat", True),
+    "KARNATAKA": ("Karnataka", True),
+    "KERALA": ("Kerala", True),
+    "MAHARASHTRA": ("Maharashtra", True),
+    "PUNJAB": ("Punjab", True),
+    "RAJASTHAN": ("Rajasthan", True),
+    "UTTAR PRADESH": ("Uttar Pradesh", True),
+    "WEST BENGAL": ("West Bengal", True),
+
+    # Key District -> Direct Parent State mappings
+    "MEERUT": ("Uttar Pradesh", True),
+    "LUCKNOW": ("Uttar Pradesh", True),
+    "KANPUR": ("Uttar Pradesh", True),
+    "MUMBAI": ("Maharashtra", True),
+    "PUNE": ("Maharashtra", True),
+    "NASHIK": ("Maharashtra", True),
+    "JAIPUR": ("Rajasthan", True),
+    "UDAIPUR": ("Rajasthan", True),
+    "AHMEDABAD": ("Gujarat", True),
+    "SURAT": ("Gujarat", True),
+    "BENGALURU": ("Karnataka", True),
+    "MYSURU": ("Karnataka", True),
+    "GUWAHATI": ("Assam", True),
+    "DIBRUGARH": ("Assam", True),
+    "WAYANAD": ("Kerala", True),
+    "IDUKKI": ("Kerala", True),
+    "THIRUVANANTHAPURAM": ("Kerala", True),
+    "KOLKATA": ("West Bengal", True),
+    "DARJEELING": ("West Bengal", True),
+    "AMRITSAR": ("Punjab", True),
+    "LUDHIANA": ("Punjab", True),
+
+    # Regional fallbacks for non-covered states (Explicitly disclosed in metadata)
+    "ANDHRA PRADESH": ("Karnataka", False),
+    "TELANGANA": ("Karnataka", False),
+    "TAMIL NADU": ("Kerala", False),
+    "BIHAR": ("Uttar Pradesh", False),
+    "JHARKHAND": ("West Bengal", False),
+    "ODISHA": ("West Bengal", False),
+    "CHHATTISGARH": ("Maharashtra", False),
+    "MADHYA PRADESH": ("Maharashtra", False),
+    "HARYANA": ("Punjab", False),
+    "DELHI": ("Uttar Pradesh", False),
+    "HIMACHAL PRADESH": ("Punjab", False),
+    "UTTARAKHAND": ("Uttar Pradesh", False),
+    "GOA": ("Maharashtra", False),
+    "ARUNACHAL PRADESH": ("Assam", False),
+    "MANIPUR": ("Assam", False),
+    "MEGHALAYA": ("Assam", False),
+    "MIZORAM": ("Assam", False),
+    "NAGALAND": ("Assam", False),
+    "TRIPURA": ("Assam", False),
+    "SIKKIM": ("West Bengal", False),
+    "VISAKHAPATNAM": ("Karnataka", False),
+    "VIJAYAWADA": ("Karnataka", False),
+    "PATNA": ("Uttar Pradesh", False),
+    "GAYA": ("Uttar Pradesh", False),
+    "RAIPUR": ("Maharashtra", False),
+    "BILASPUR": ("Maharashtra", False),
+    "PANAJI": ("Maharashtra", False),
+    "MARGAO": ("Maharashtra", False),
+    "GURUGRAM": ("Punjab", False),
+    "FARIDABAD": ("Punjab", False),
+    "SHIMLA": ("Punjab", False),
+    "DHARAMSHALA": ("Punjab", False),
+    "RANCHI": ("West Bengal", False),
+    "JAMSHEDPUR": ("West Bengal", False),
+    "BHOPAL": ("Maharashtra", False),
+    "INDORE": ("Maharashtra", False),
+    "IMPHAL": ("Assam", False),
+    "SHILLONG": ("Assam", False),
+    "AIZAWL": ("Assam", False),
+    "KOHIMA": ("Assam", False),
+    "BHUBANESWAR": ("West Bengal", False),
+    "CUTTACK": ("West Bengal", False),
+    "GANGTOK": ("West Bengal", False),
+    "CHENNAI": ("Kerala", False),
+    "COIMBATORE": ("Kerala", False),
+    "HYDERABAD": ("Karnataka", False),
+    "WARANGAL": ("Karnataka", False),
+    "AGARTALA": ("Assam", False),
+    "DEHRADUN": ("Uttar Pradesh", False),
+    "NAINITAL": ("Uttar Pradesh", False)
+}
+
+def resolve_state_name(location_input: str) -> Tuple[str, bool, str]:
     """
     Resolves any Indian State or District name to a validated dataset training state.
+    Returns: (resolved_state, is_direct_match, location_resolution_note)
     """
     if not location_input:
-        return "Uttar Pradesh"
-    key = str(location_input).strip().upper()
-    return STATE_MAPPING.get(key, "Uttar Pradesh")
+        return ("Uttar Pradesh", True, "Direct validated Phase 3B model for Uttar Pradesh.")
+    
+    clean_input = str(location_input).strip()
+    key = clean_input.upper()
+
+    if key in STATE_MAPPING:
+        resolved_state, is_direct = STATE_MAPPING[key]
+        if is_direct:
+            note = f"Direct validated Phase 3B model for {resolved_state}."
+        else:
+            note = f"Using regional baseline model ({resolved_state}) for {clean_input}. Direct daily observation series will be added in future iterations."
+        return (resolved_state, is_direct, note)
+    
+    # Default fallback
+    return ("Uttar Pradesh", False, f"Using regional baseline model (Uttar Pradesh) for {clean_input}.")
 
 class ProductionModelManager:
     """
@@ -210,7 +236,7 @@ def prepare_inference_features(
     Extracts/engineers the exact 30 Phase 3B feature vector strictly on or before prediction date T.
     Automatically resolves any Indian state/district name.
     """
-    resolved_state = resolve_state_name(state_input)
+    resolved_state, is_direct, note = resolve_state_name(state_input)
     target_dt = pd.to_datetime(prediction_date_str)
     
     # If no rainfall series supplied, extract from historical dataset
@@ -363,7 +389,7 @@ def run_production_inference(
     Feature Preparation -> Calibrated 12-Target Models -> Advisory Engine -> Forecast Response.
     """
     model_mgr = get_model_manager()
-    resolved_state = resolve_state_name(state)
+    resolved_state, is_direct_match, resolution_note = resolve_state_name(state)
 
     # 1. Feature Preparation (strictly <= T)
     feat_df = prepare_inference_features(prediction_date_str, resolved_state, rainfall_series_df)
@@ -408,6 +434,8 @@ def run_production_inference(
         "metadata": {
             "requested_location": state,
             "resolved_state": resolved_state,
+            "is_direct_match": is_direct_match,
+            "location_resolution_note": resolution_note,
             "prediction_date": prediction_date_str,
             "model_version": "Phase_3B_Official_Production",
             "advisory_engine_version": "Phase_6_Rule_Engine"

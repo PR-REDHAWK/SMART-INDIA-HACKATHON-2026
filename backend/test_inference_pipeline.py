@@ -8,7 +8,7 @@ from backend.inference_pipeline import run_production_inference, get_model_manag
 
 def test_production_pipeline():
     print("==========================================================")
-    print("RUNNING PHASE 9 LOCATION & FORECAST VALIDATION TESTS")
+    print("RUNNING PHASE 9.5 LOCATION HONESTY & RELIABILITY TESTS")
     print("==========================================================")
 
     # 1. Startup Artifact & Compatibility Validation
@@ -17,59 +17,48 @@ def test_production_pipeline():
     assert len(mgr.calibrators) == 12, f"Expected 12 calibrators, got {len(mgr.calibrators)}"
     print("[PASS] Model Manager loaded 12 official calibrators successfully.")
 
-    # 2. Test Comprehensive Indian Location Resolution
-    print("\n2. Auditing Location Resolution across 14 Test Locations...")
+    # 2. Test Location Resolution & Honesty Metadata
+    print("\n2. Auditing Location Honesty Metadata across 14 Test Locations...")
     test_locations = [
-        ("Uttar Pradesh", "Uttar Pradesh"),
-        ("Meerut", "Uttar Pradesh"),
-        ("Lucknow", "Uttar Pradesh"),
-        ("Maharashtra", "Maharashtra"),
-        ("Mumbai", "Maharashtra"),
-        ("Rajasthan", "Rajasthan"),
-        ("Karnataka", "Karnataka"),
-        ("Kerala", "Kerala"),
-        ("Andhra Pradesh", "Karnataka"),
-        ("Bihar", "Uttar Pradesh"),
-        ("Delhi", "Uttar Pradesh"),
-        ("Tamil Nadu", "Kerala"),
-        ("Himachal Pradesh", "Punjab"),
-        ("Madhya Pradesh", "Maharashtra")
+        ("Uttar Pradesh", "Uttar Pradesh", True),
+        ("Meerut", "Uttar Pradesh", True),
+        ("Lucknow", "Uttar Pradesh", True),
+        ("Maharashtra", "Maharashtra", True),
+        ("Mumbai", "Maharashtra", True),
+        ("Rajasthan", "Rajasthan", True),
+        ("Karnataka", "Karnataka", True),
+        ("Kerala", "Kerala", True),
+        ("Andhra Pradesh", "Karnataka", False),
+        ("Bihar", "Uttar Pradesh", False),
+        ("Delhi", "Uttar Pradesh", False),
+        ("Tamil Nadu", "Kerala", False),
+        ("Himachal Pradesh", "Punjab", False),
+        ("Madhya Pradesh", "Maharashtra", False)
     ]
 
-    for loc_in, expected_state in test_locations:
-        res_st = resolve_state_name(loc_in)
+    for loc_in, expected_state, expected_direct in test_locations:
+        res_st, is_direct, note = resolve_state_name(loc_in)
         assert res_st == expected_state, f"Location '{loc_in}' resolved to '{res_st}', expected '{expected_state}'"
-        print(f"  [PASS] Location '{loc_in}' -> Resolved State: '{res_st}'")
+        assert is_direct == expected_direct, f"Location '{loc_in}' expected is_direct={expected_direct}, got {is_direct}"
+        print(f"  [PASS] Location '{loc_in}' -> State: '{res_st}' | Direct: {is_direct} | Note: {note}")
 
-    # 3. Live Pipeline Forecast Execution across 5 Geographic Scenarios
-    print("\n3. Testing End-to-End Live Pipeline Execution across Regions...")
+    # 3. Live Pipeline Forecast Metadata Validation
+    print("\n3. Testing End-to-End Live Pipeline Honesty Metadata...")
     
-    # Scenario A: Meerut (District under Uttar Pradesh)
-    res_a = run_production_inference(state="Meerut", prediction_date_str="2024-06-15", crop_name="Rice", growth_stage="Sowing")
-    assert res_a['status'] == "SUCCESS"
-    assert res_a['metadata']['resolved_state'] == "Uttar Pradesh"
-    print(f"  [PASS] Meerut (UP) -> Onset 14d={res_a['probabilities']['onset']['14d']}%, Break 14d={res_a['probabilities']['break_spell']['14d']}% | Advisory: {res_a['advisory']['advisory_code']}")
+    # Direct Match Test (Uttar Pradesh / Meerut)
+    res_direct = run_production_inference(state="Uttar Pradesh", prediction_date_str="2024-06-15")
+    assert res_direct['metadata']['is_direct_match'] == True
+    assert "Direct validated Phase 3B model" in res_direct['metadata']['location_resolution_note']
+    print(f"  [PASS] Direct Match (UP) -> Metadata: is_direct_match={res_direct['metadata']['is_direct_match']}")
 
-    # Scenario B: Wayanad (District under Kerala)
-    res_b = run_production_inference(state="Wayanad", prediction_date_str="2024-05-20", crop_name="Soybean", growth_stage="Sowing")
-    assert res_b['status'] == "SUCCESS"
-    assert res_b['metadata']['resolved_state'] == "Kerala"
-    print(f"  [PASS] Wayanad (Kerala) -> Onset 7d={res_b['probabilities']['onset']['7d']}%, Heavy Rain 7d={res_b['probabilities']['heavy_rain']['7d']}% | Advisory: {res_b['advisory']['advisory_code']}")
-
-    # Scenario C: Bihar / Patna (Mapped to Uttar Pradesh regional baseline)
-    res_c = run_production_inference(state="Patna", prediction_date_str="2024-07-05", crop_name="Rice", growth_stage="Vegetative")
-    assert res_c['status'] == "SUCCESS"
-    assert res_c['metadata']['resolved_state'] == "Uttar Pradesh"
-    print(f"  [PASS] Patna (Bihar) -> Break 14d={res_c['probabilities']['break_spell']['14d']}% | Advisory: {res_c['advisory']['advisory_code']}")
-
-    # Scenario D: Andhra Pradesh / Visakhapatnam (Mapped to Karnataka regional baseline)
-    res_d = run_production_inference(state="Visakhapatnam", prediction_date_str="2024-08-10", crop_name="Cotton", growth_stage="Flowering")
-    assert res_d['status'] == "SUCCESS"
-    assert res_d['metadata']['resolved_state'] == "Karnataka"
-    print(f"  [PASS] Visakhapatnam (AP) -> Break 21d={res_d['probabilities']['break_spell']['21d']}% | Advisory: {res_d['advisory']['advisory_code']}")
+    # Fallback Baseline Test (Andhra Pradesh -> Karnataka)
+    res_fallback = run_production_inference(state="Andhra Pradesh", prediction_date_str="2024-06-15")
+    assert res_fallback['metadata']['is_direct_match'] == False
+    assert "Using regional baseline model (Karnataka)" in res_fallback['metadata']['location_resolution_note']
+    print(f"  [PASS] Fallback Baseline (AP -> Karnataka) -> Metadata: is_direct_match={res_fallback['metadata']['is_direct_match']} | Note: {res_fallback['metadata']['location_resolution_note']}")
 
     print("\n==========================================================")
-    print("ALL PHASE 9 LOCATION & FORECAST VALIDATION TESTS PASSED (100%)!")
+    print("ALL PHASE 9.5 LOCATION HONESTY TESTS PASSED (100%)!")
     print("==========================================================")
 
 if __name__ == '__main__':

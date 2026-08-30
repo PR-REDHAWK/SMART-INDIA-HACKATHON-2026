@@ -1,13 +1,17 @@
 import React from "react";
+import { Info } from "lucide-react";
 
 export default function HeroStatus({ selectedRegion, liveForecast }) {
   const probs = liveForecast?.probabilities;
   const adv = liveForecast?.advisory;
+  const meta = liveForecast?.metadata;
 
   const onset7d = probs?.onset?.['7d'] ?? 12;
   const break7d = probs?.break_spell?.['7d'] ?? 85;
   const heavy7d = probs?.heavy_rain?.['7d'] ?? 4;
   const isFalseOnset = adv?.false_onset_risk ?? false;
+  const isDirectMatch = meta?.is_direct_match ?? true;
+  const resolvedState = meta?.resolved_state ?? "Uttar Pradesh";
 
   // Derive watch status badge
   let statusText = "NORMAL";
@@ -31,8 +35,13 @@ export default function HeroStatus({ selectedRegion, liveForecast }) {
           <span className="panel-label">7D Monsoon Onset Probability</span>
           <div className="font-display text-[19px] font-semibold mt-1 text-text-hi">
             {selectedRegion?.name || "Uttar Pradesh"}
-            <span className="text-text-mid font-normal text-[13px] block mt-0.5 font-sans">
+            <span className="text-text-mid font-normal text-[13px] block mt-0.5 font-sans flex items-center gap-1.5">
               {selectedRegion?.level === "District" ? "District Monitor" : "State Monitor"}
+              {!isDirectMatch && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-mono text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20" title={`Using regional baseline model (${resolvedState})`}>
+                  <Info size={11} /> Regional Baseline ({resolvedState})
+                </span>
+              )}
             </span>
           </div>
         </div>

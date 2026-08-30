@@ -3,6 +3,7 @@ import { TriangleAlert, Sprout, Wind, Droplet, ShieldAlert } from "lucide-react"
 
 export default function AdvisoryCard({ liveForecast }) {
   const adv = liveForecast?.advisory;
+  const meta = liveForecast?.metadata;
 
   const title = adv?.title || "Delay sowing by 3–4 days";
   const primaryAction = adv?.primary_action || "A possible dry spell may follow expected rainfall. Delay rain-dependent sowing until sustained moisture settles.";
@@ -10,6 +11,8 @@ export default function AdvisoryCard({ liveForecast }) {
   const stage = adv?.growth_stage || "Sowing";
   const riskLevel = adv?.risk_level || "HIGH";
   const isFalseOnset = adv?.false_onset_risk || false;
+  const isDirectMatch = meta?.is_direct_match ?? true;
+  const resolvedState = meta?.resolved_state ?? "Uttar Pradesh";
 
   return (
     <div className="glass-panel p-[24px] relative overflow-hidden bg-gradient-to-br from-[rgba(245,158,11,0.05)] to-transparent">
@@ -53,7 +56,7 @@ export default function AdvisoryCard({ liveForecast }) {
           <div className="w-7 h-7 rounded-lg bg-[rgba(245,158,11,0.15)] text-amber-600 flex items-center justify-center">
             <Wind size={14} />
           </div>
-          Phase 3B Calibrated Consensus
+          {isDirectMatch ? "Direct Phase 3B Model" : `Regional Baseline (${resolvedState})`}
         </div>
       </div>
     </div>
