@@ -4,11 +4,15 @@ Translates probabilistic event predictions into actionable, crop-specific recomm
 """
 
 from typing import Dict, Optional
-from backend.advisory.schemas import ForecastProbabilities, CropContext, AdvisoryOutput
-from backend.advisory.rules import (
-    get_risk_level, detect_trend, FALSE_ONSET_CONFIG, SOIL_MOISTURE_CONFIG
-)
-from backend.advisory.crops import CROP_PROFILES
+
+try:
+    from advisory.schemas import ForecastProbabilities, CropContext, AdvisoryOutput
+    from advisory.rules import get_risk_level, detect_trend, FALSE_ONSET_CONFIG, SOIL_MOISTURE_CONFIG
+    from advisory.crops import CROP_PROFILES
+except ImportError:
+    from backend.advisory.schemas import ForecastProbabilities, CropContext, AdvisoryOutput
+    from backend.advisory.rules import get_risk_level, detect_trend, FALSE_ONSET_CONFIG, SOIL_MOISTURE_CONFIG
+    from backend.advisory.crops import CROP_PROFILES
 
 class AdvisoryEngine:
     def __init__(self, false_onset_onset_thresh: float = 60.0, false_onset_break_thresh: float = 50.0):

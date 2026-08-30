@@ -11,8 +11,12 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional, Any
 
-from backend.advisory.schemas import ForecastProbabilities, CropContext, AdvisoryOutput
-from backend.advisory.engine import AdvisoryEngine
+try:
+    from advisory.schemas import ForecastProbabilities, CropContext, AdvisoryOutput
+    from advisory.engine import AdvisoryEngine
+except ImportError:
+    from backend.advisory.schemas import ForecastProbabilities, CropContext, AdvisoryOutput
+    from backend.advisory.engine import AdvisoryEngine
 
 # Official 30 Phase 3B Feature Ordering
 OFFICIAL_FEATURE_ORDER = [
@@ -53,7 +57,14 @@ class ProductionModelManager:
             return
 
         if not os.path.exists(self.meta_path):
-            raise FileNotFoundError(f"Official model metadata not found at {self.meta_path}")
+            # Try path relative to backend directory
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            alt_models_dir = os.path.join(base_dir, 'models', 'event_models')
+            if os.path.exists(alt_models_dir):
+                self.models_dir = alt_models_dir
+                self.meta_path = os.path.join(alt_models_dir, 'model_metadata.json')
+            else:
+                raise FileNotFoundError(f"Official model metadata not found at {self.meta_path}")
 
         with open(self.meta_path, 'r') as f:
             self.metadata = json.load(f)
@@ -105,7 +116,10 @@ def prepare_inference_features(
     
     # If no rainfall series supplied, extract from historical dataset
     if rainfall_series_df is None:
-        ds_path = 'data/forecast_training_dataset.csv'
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        ds_path = os.path.join(base_dir, 'data', 'forecast_training_dataset.csv')
+        if not os.path.exists(ds_path):
+            ds_path = 'data/forecast_training_dataset.csv'
         if not os.path.exists(ds_path):
             raise FileNotFoundError(f"Forecast training dataset not found at {ds_path}")
         
@@ -181,7 +195,11 @@ def prepare_inference_features(
     cos_doy = float(np.cos(2 * np.pi * doy / 365.25))
 
     # Climate Indices (lagged month M-1)
-    ds_path = 'data/forecast_training_dataset.csv'
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    ds_path = os.path.join(base_dir, 'data', 'forecast_training_dataset.csv')
+    if not os.path.exists(ds_path):
+        ds_path = 'data/forecast_training_dataset.csv'
+        
     full_df = pd.read_csv(ds_path)
     full_df['date'] = pd.to_datetime(full_df['date'])
     hist_row = full_df[full_df['date'] == target_dt]

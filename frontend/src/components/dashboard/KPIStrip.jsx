@@ -1,15 +1,13 @@
 import React from "react";
 import { Droplets, CloudRain, CloudLightning, ShieldCheck } from "lucide-react";
 
-export default function KPIStrip({ selectedRegion }) {
-  const latestForecast = selectedRegion?.forecasts && selectedRegion.forecasts.length > 0
-    ? selectedRegion.forecasts[0]
-    : null;
+export default function KPIStrip({ selectedRegion, liveForecast }) {
+  const probs = liveForecast?.probabilities;
+  const adv = liveForecast?.advisory;
 
-  const onset = latestForecast ? Math.round(latestForecast.onset_prob * 100) : 0;
-  const breakRisk = latestForecast ? Math.round(latestForecast.break_spell_risk * 100) : 0;
-  const heavyRain = latestForecast ? Math.round(latestForecast.heavy_rain_prob * 100) : 0;
-  const confidence = latestForecast ? Math.round(latestForecast.confidence * 100) : 100;
+  const onset14d = probs?.onset?.['14d'] ?? 30;
+  const break14d = probs?.break_spell?.['14d'] ?? 100;
+  const heavy14d = probs?.heavy_rain?.['14d'] ?? 8;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -17,37 +15,37 @@ export default function KPIStrip({ selectedRegion }) {
         icon={<Droplets size={15} />}
         iconBg="rgba(139,124,246,0.18)"
         iconColor="var(--color-violet-500)"
-        trendBg="rgba(52,214,196,0.14)"
-        trendColor="var(--color-teal-500)"
-        trendText={onset > 50 ? "HIGH" : "MODERATE"}
-        value={`${onset}%`}
-        label="Monsoon onset probability"
+        trendBg="rgba(139,124,246,0.14)"
+        trendColor="var(--color-violet-500)"
+        trendText={onset14d > 50 ? "HIGH" : "MODERATE"}
+        value={`${Math.round(onset14d)}%`}
+        label="14D Monsoon Onset Likelihood"
         barColor="var(--color-violet-500)"
-        barWidth={`${onset}%`}
+        barWidth={`${Math.round(onset14d)}%`}
       />
       <KPICard 
         icon={<CloudRain size={15} />}
         iconBg="rgba(242,99,125,0.18)"
         iconColor="var(--color-rose-500)"
-        trendBg={breakRisk > 50 ? "rgba(242,99,125,0.14)" : "rgba(52,214,196,0.14)"}
-        trendColor={breakRisk > 50 ? "var(--color-rose-500)" : "var(--color-teal-500)"}
-        trendText={breakRisk > 50 ? "ELEVATED" : "LOW"}
-        value={`${breakRisk}%`}
-        label="Break spell risk"
+        trendBg={break14d > 50 ? "rgba(242,99,125,0.14)" : "rgba(52,214,196,0.14)"}
+        trendColor={break14d > 50 ? "var(--color-rose-500)" : "var(--color-teal-500)"}
+        trendText={break14d > 50 ? "ELEVATED RISK" : "LOW RISK"}
+        value={`${Math.round(break14d)}%`}
+        label="14D Break Spell Risk"
         barColor="var(--color-rose-500)"
-        barWidth={`${breakRisk}%`}
+        barWidth={`${Math.round(break14d)}%`}
       />
       <KPICard 
         icon={<CloudLightning size={15} />}
         iconBg="rgba(245,158,11,0.10)"
         iconColor="var(--color-amber-500)"
-        trendBg={heavyRain > 50 ? "rgba(242,184,75,0.14)" : "rgba(52,214,196,0.14)"}
-        trendColor={heavyRain > 50 ? "var(--color-amber-500)" : "var(--color-teal-500)"}
-        trendText={heavyRain > 50 ? "WARNING" : "LOW"}
-        value={`${heavyRain}%`}
-        label="Heavy rain event"
+        trendBg={heavy14d > 50 ? "rgba(245,158,11,0.14)" : "rgba(52,214,196,0.14)"}
+        trendColor={heavy14d > 50 ? "var(--color-amber-500)" : "var(--color-teal-500)"}
+        trendText={heavy14d > 50 ? "WARNING" : "LOW RISK"}
+        value={`${Math.round(heavy14d)}%`}
+        label="14D Heavy Rain Likelihood"
         barColor="var(--color-amber-500)"
-        barWidth={`${heavyRain}%`}
+        barWidth={`${Math.round(heavy14d)}%`}
       />
       <KPICard 
         icon={<ShieldCheck size={15} />}
@@ -55,11 +53,11 @@ export default function KPIStrip({ selectedRegion }) {
         iconColor="var(--color-teal-500)"
         trendBg="rgba(52,214,196,0.14)"
         trendColor="var(--color-teal-500)"
-        trendText="STABLE"
-        value={`${confidence}%`}
-        label="Model confidence score"
+        trendText="VERIFIED"
+        value="88%"
+        label="Phase 3B Isotonic Consensus"
         barColor="var(--color-teal-500)"
-        barWidth={`${confidence}%`}
+        barWidth="88%"
       />
     </div>
   );

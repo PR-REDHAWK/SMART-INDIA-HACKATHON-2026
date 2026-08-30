@@ -22,6 +22,7 @@ function App() {
   const [selectedStateId, setSelectedStateId] = useState(null);
   const [selectedDistrictId, setSelectedDistrictId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [liveForecast, setLiveForecast] = useState(null);
 
   // Fetch live geographical context from database
   useEffect(() => {
@@ -45,9 +46,24 @@ function App() {
       });
   }, []);
 
+  // Fetch live forecast from Phase 7 Production Inference Pipeline whenever state/district selection changes
+  useEffect(() => {
+    const states = regions.filter((r) => r.level === "State");
+    const selectedState = states.find((s) => s.id === selectedStateId);
+    const stateName = selectedState ? selectedState.name : "Uttar Pradesh";
+
+    fetch(`/api/v1/forecast/live?state=${encodeURIComponent(stateName)}&prediction_date=2024-06-15&crop_name=Rice&growth_stage=Sowing&soil_moisture_pct=25.0`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status === "SUCCESS") {
+          setLiveForecast(data);
+        }
+      })
+      .catch((err) => console.error("Error fetching live forecast:", err));
+  }, [selectedStateId, selectedDistrictId, regions]);
+
   const handleStateChange = (stateId) => {
     setSelectedStateId(Number(stateId));
-    // Find first district matching the new state
     const firstDistrict = regions.find((r) => r.level === "District" && r.parent_id === Number(stateId));
     if (firstDistrict) {
       setSelectedDistrictId(firstDistrict.id);
@@ -63,7 +79,7 @@ function App() {
   // Derive selection scopes
   const states = regions.filter((r) => r.level === "State");
   const selectedState = states.find((s) => s.id === selectedStateId) || null;
-  const districts = regions.filter((r) => r.level === "District" && r.parent_id === selectedStateId);
+  const districts = regions.filter((r) => r.level === "State" ? false : r.parent_id === selectedStateId);
   const selectedDistrict = regions.find((d) => d.id === selectedDistrictId) || null;
 
   const renderContent = () => {
@@ -89,18 +105,18 @@ function App() {
             />
             {/* HERO ROW */}
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.35fr] gap-[22px] items-stretch">
-              <HeroStatus selectedRegion={selectedDistrict || selectedState} />
+              <HeroStatus selectedRegion={selectedDistrict || selectedState} liveForecast={liveForecast} />
               <RiskMap selectedRegion={selectedDistrict || selectedState} />
             </div>
             
             {/* KPI STRIP */}
-            <KPIStrip selectedRegion={selectedDistrict || selectedState} />
+            <KPIStrip selectedRegion={selectedDistrict || selectedState} liveForecast={liveForecast} />
             
             {/* FORECAST & ADVISORY ROW */}
             <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-[22px] items-stretch">
               <div className="flex flex-col gap-[22px]">
-                <AdvisoryCard />
-                <ForecastOutlook />
+                <AdvisoryCard liveForecast={liveForecast} />
+                <ForecastOutlook liveForecast={liveForecast} />
               </div>
               <div className="flex flex-col gap-[22px]">
                 <AdvisoryFeed />
