@@ -1,5 +1,5 @@
 import React from "react";
-import { TriangleAlert, Sprout, Wind, Droplet, ShieldAlert } from "lucide-react";
+import { TriangleAlert, Sprout, Wind, Droplet, ShieldAlert, CheckCircle2 } from "lucide-react";
 
 export default function AdvisoryCard({ liveForecast }) {
   const adv = liveForecast?.advisory;
@@ -7,6 +7,10 @@ export default function AdvisoryCard({ liveForecast }) {
 
   const title = adv?.title || "Delay sowing by 3–4 days";
   const primaryAction = adv?.primary_action || "A possible dry spell may follow expected rainfall. Delay rain-dependent sowing until sustained moisture settles.";
+  const supportingActions = adv?.supporting_actions || [
+    "Prepare supplemental irrigation facilities",
+    "Keep nursery beds covered and hydrated"
+  ];
   const cropName = adv?.crop_name || "Rice";
   const stage = adv?.growth_stage || "Sowing";
   const riskLevel = adv?.risk_level || "HIGH";
@@ -35,9 +39,20 @@ export default function AdvisoryCard({ liveForecast }) {
         {title}
       </h2>
       
-      <p className="text-[14px] text-text-mid leading-relaxed mb-6 max-w-xl">
+      <p className="text-[14px] text-text-mid leading-relaxed mb-4 max-w-xl">
         {primaryAction}
       </p>
+
+      {supportingActions.length > 0 && (
+        <div className="mb-6 space-y-1.5">
+          {supportingActions.map((action, idx) => (
+            <div key={idx} className="flex items-center gap-2 text-[13px] text-text-mid font-sans">
+              <CheckCircle2 size={13} className="text-teal-500 shrink-0" />
+              <span>{action}</span>
+            </div>
+          ))}
+        </div>
+      )}
       
       <div className="flex flex-wrap gap-6 border-t border-glass-borderSoft pt-5">
         <div className="flex items-center gap-2 text-[13px] text-text-hi font-medium">
