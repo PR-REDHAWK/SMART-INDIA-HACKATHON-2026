@@ -119,6 +119,15 @@ export const translations = {
     model_page_title: "Phase 3B Machine Learning Model Architecture",
     advisory_page_title: "Phase 6 Agricultural Advisory System Rules",
     
+    // Model Intelligence Page
+    model_page_subtitle: "Hybrid climate-to-local prediction framework & Isotonic calibration engine",
+    architecture_title: "Phase 3B Model Architecture Pipeline",
+    calibration_title: "Isotonic Probability Calibration & Reliability",
+    ece_score: "Expected Calibration Error (ECE)",
+    brier_score: "Brier Reliability Score",
+    feature_contribution: "Feature Contribution & Importance",
+    stage_inspect_title: "Pipeline Stage Inspection",
+
     // Settings Page
     settings_title: "SETTINGS",
     settings_subtitle: "Customize your Monsoon Intelligence experience",
@@ -256,6 +265,15 @@ export const translations = {
     data_page_title: "जलवायु डेटा स्रोत और मौसम विज्ञान इनपुट",
     model_page_title: "फेज 3B मशीन लर्निंग मॉडल आर्किटेक्चर",
     advisory_page_title: "फेज 6 कृषि सलाह नियम प्रणाली",
+
+    // Model Intelligence Page
+    model_page_subtitle: "हाइब्रिड जलवायु-से-स्थानीय पूर्वानुमान ढांचा और आइसोटोनिक अंशांकन इंजन",
+    architecture_title: "फेज 3B मॉडल आर्किटेक्चर पाइपलाइन",
+    calibration_title: "आइसोटोनिक संभावना अंशांकन और विश्वसनीयता",
+    ece_score: "अपेक्षित अंशांकन त्रुटि (ECE)",
+    brier_score: "ब्रियर विश्वसनीयता स्कोर",
+    feature_contribution: "विशेषता योगदान और महत्व",
+    stage_inspect_title: "पाइपलाइन चरण निरीक्षण",
 
     // Settings Page
     settings_title: "सेटिंग्स",
