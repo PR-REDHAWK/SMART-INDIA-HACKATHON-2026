@@ -1,70 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { AlertTriangle, Calendar, Sprout, Droplets, ShieldAlert, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { AlertTriangle, Calendar, Sprout, Droplets, ShieldAlert, Sparkles, ChevronDown, ChevronUp, Filter, Volume2, VolumeX } from "lucide-react";
 import clsx from "clsx";
-
-const texts = {
-  en: {
-    title: "AGRICULTURAL ADVISORY",
-    subtitle: "Translate climate predictions into actionable farming decisions.",
-    actionRequired: "ACTION REQUIRED",
-    advisoryTitle: "DELAY SOWING BY 3–4 DAYS",
-    advisoryReason: "A possible rainfall event may be followed by a prolonged dry spell. Sowing prematurely could risk germination failure.",
-    location: "Meerut",
-    crop: "Rice",
-    breakProb: "71%",
-    soilMoist: "31%",
-    confidence: "HIGH",
-    sowingTitle: "Delay sowing",
-    sowingDesc: "Wait for rainfall persistence before planting.",
-    irrigationTitle: "Monitor irrigation",
-    irrigationDesc: "Current soil moisture is adequate, but conditions may change.",
-    drainageTitle: "Prepare drainage",
-    drainageDesc: "Heavy rainfall probability is increasing.",
-    healthTitle: "Monitor crop stress",
-    healthDesc: "Dry spell probability is elevated.",
-    timelineToday: "Monitor conditions",
-    timeline3Days: "Avoid premature sowing",
-    timeline7Days: "Expected rainfall window",
-    timeline14Days: "Possible dry spell",
-    liveAlerts: "LIVE DATABASE ALERTS",
-    showMore: "Show More Alerts",
-    showLess: "Show Less"
-  },
-  hi: {
-    title: "कृषि संबंधी सलाह",
-    subtitle: "जलवायु पूर्वानुमानों को खेती के व्यावहारिक निर्णयों में बदलें।",
-    actionRequired: "कार्रवाई आवश्यक",
-    advisoryTitle: "बुवाई में 3-4 दिन की देरी करें",
-    advisoryReason: "संभावित बारिश के बाद लंबे समय तक सूखा पड़ सकता है। समय से पहले बुवाई करने से अंकुरण विफल होने का खतरा हो सकता है।",
-    location: "मेरठ",
-    crop: "धान",
-    breakProb: "७१%",
-    soilMoist: "३१%",
-    confidence: "उच्च",
-    sowingTitle: "बुवाई में देरी करें",
-    sowingDesc: "रोपण से पहले बारिश की निरंतरता की प्रतीक्षा करें।",
-    irrigationTitle: "सिंचाई की निगरानी करें",
-    irrigationDesc: "वर्तमान मिट्टी की नमी पर्याप्त है, लेकिन स्थिति बदल सकती है।",
-    drainageTitle: "जल निकासी तैयार करें",
-    drainageDesc: "भारी बारिश की संभावना बढ़ रही है।",
-    healthTitle: "फसल के तनाव की निगरानी करें",
-    healthDesc: "सूखे की संभावना बढ़ी हुई है।",
-    timelineToday: "स्थितियों की निगरानी करें",
-    timeline3Days: "समय से पहले बुवाई से बचें",
-    timeline7Days: "अपेक्षित वर्षा की खिड़की",
-    timeline14Days: "संभावित सूखा समय",
-    liveAlerts: "लाइव डेटाबेस चेतावनियां",
-    showMore: "और चेतावनियां देखें",
-    showLess: "कम देखें"
-  }
-};
+import { useLanguage } from "../../context/LanguageContext";
+import { useTextToSpeech } from "../../hooks/useTextToSpeech";
 
 export default function AdvisoryPage() {
-  const [lang, setLang] = useState("en");
+  const { language, setLanguage, t } = useLanguage();
+  const { speak, stop, isSpeaking } = useTextToSpeech();
+
   const [liveAdvisories, setLiveAdvisories] = useState([]);
   const [showAllAlerts, setShowAllAlerts] = useState(false);
-  
-  const t = texts[lang];
+
+  // Interactive Scenario & Crop/Stage Filter States
+  const [activeScenario, setActiveScenario] = useState("LIVE");
+  const [crop, setCrop] = useState("Rice");
+  const [stage, setStage] = useState("Sowing");
 
   useEffect(() => {
     fetch('/api/v1/advisories')
@@ -77,9 +27,87 @@ export default function AdvisoryPage() {
   const maxAlertCap = 3;
   const displayedAdvisories = showAllAlerts ? liveAdvisories : liveAdvisories.slice(0, maxAlertCap);
 
+  // Scenario specifics logic
+  const getScenarioContent = () => {
+    if (activeScenario === "FALSE_ONSET") {
+      return {
+        badge: "FALSE-ONSET ALERT",
+        badgeColor: "border-rose-500 bg-gradient-to-r from-rose-500/10 to-transparent",
+        title: t("code_FALSE_ONSET_WARNING_title", "⚠️ False-Onset Risk Warning"),
+        reason: t("code_FALSE_ONSET_WARNING_msg", "Monsoon onset appears likely, but break-spell risk remains high over the next 14 days."),
+        action: t("code_FALSE_ONSET_WARNING_action", "Avoid relying solely on initial rainfall for sowing. Delay rain-dependent sowing until sustained moisture settles."),
+        breakProb: "85%",
+        soilMoist: "22%",
+        confidence: "VERY HIGH",
+        timelineToday: "Hold Sowing Operations",
+        timeline3Days: "Prepare Irrigation Facilities",
+        timeline7Days: "Monitor Moisture Persistence",
+        timeline14Days: "Dry Spell Window"
+      };
+    } else if (activeScenario === "HEAVY_RAIN") {
+      return {
+        badge: "HEAVY RAIN ALERT",
+        badgeColor: "border-amber-500 bg-gradient-to-r from-amber-500/10 to-transparent",
+        title: t("code_HEAVY_RAIN_WARNING_title", "⚡ High Heavy Rainfall Alert"),
+        reason: t("code_HEAVY_RAIN_WARNING_msg", "Heavy rainfall event probability is high over the next 7-14 days."),
+        action: t("code_HEAVY_RAIN_WARNING_action", "Check and clear field drainage systems to prevent waterlogging and crop damage."),
+        breakProb: "12%",
+        soilMoist: "68%",
+        confidence: "HIGH",
+        timelineToday: "Inspect Drainage Furrows",
+        timeline3Days: "Clear Debris & Drainage",
+        timeline7Days: "Heavy Rainfall Event Window",
+        timeline14Days: "Post-Rain Field Inspection"
+      };
+    } else if (activeScenario === "BREAK_SPELL") {
+      return {
+        badge: "HIGH DRY-SPELL RISK",
+        badgeColor: "border-orange-500 bg-gradient-to-r from-orange-500/10 to-transparent",
+        title: t("code_BREAK_SPELL_WARNING_title", "🟠 High Dry-Spell Risk"),
+        reason: t("code_BREAK_SPELL_WARNING_msg", "A prolonged dry spell (break spell) is likely over the next 7–14 days."),
+        action: t("code_BREAK_SPELL_WARNING_action", "Delay rain-dependent sowing if practical due to imminent dry spell. Prepare supplemental irrigation alternatives."),
+        breakProb: "95%",
+        soilMoist: "18%",
+        confidence: "VERY HIGH",
+        timelineToday: "Delay Rain Sowing",
+        timeline3Days: "Prepare Protective Irrigation",
+        timeline7Days: "Dry Spell Window Begins",
+        timeline14Days: "Sustained Dry Spell"
+      };
+    } else { // LIVE PIPELINE DEFAULT
+      const cropKey = `adv_${crop.toLowerCase()}_${stage.toLowerCase()}`;
+      const cropAction = t(cropKey, null);
+      return {
+        badge: "ACTION REQUIRED",
+        badgeColor: "border-amber-500 bg-gradient-to-r from-amber-500/5 to-transparent",
+        title: t("code_BREAK_SPELL_WARNING_title", "DELAY SOWING BY 3–4 DAYS"),
+        reason: t("code_BREAK_SPELL_WARNING_msg", "A possible rainfall event may be followed by a prolonged dry spell. Sowing prematurely could risk germination failure."),
+        action: cropAction || t("code_BREAK_SPELL_WARNING_action", "A possible dry spell may follow expected rainfall. Delay rain-dependent sowing until sustained moisture settles."),
+        breakProb: "71%",
+        soilMoist: "31%",
+        confidence: "HIGH",
+        timelineToday: t("timelineToday", "Monitor conditions"),
+        timeline3Days: t("timeline3Days", "Avoid premature sowing"),
+        timeline7Days: t("timeline7Days", "Expected rainfall window"),
+        timeline14Days: t("timeline14Days", "Possible dry spell")
+      };
+    }
+  };
+
+  const activeContent = getScenarioContent();
+
+  const handlePlayVoice = () => {
+    if (isSpeaking) {
+      stop();
+      return;
+    }
+    const textToSpeak = `${activeContent.title}. ${activeContent.action}`;
+    speak(textToSpeak, language);
+  };
+
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
+      {/* Header & Language Switcher */}
       <div className="flex justify-between items-start flex-wrap gap-4">
         <div>
           <div className="font-mono text-[11.5px] tracking-[.16em] text-teal-500 uppercase mb-1.5 flex items-center gap-2">
@@ -87,33 +115,81 @@ export default function AdvisoryPage() {
             Farmer Decision Support
           </div>
           <h1 className="font-display font-semibold text-[27px] tracking-[-0.01em] text-text-hi uppercase">
-            {t.title}
+            {t("advisory_page_title", "AGRICULTURAL ADVISORY SYSTEM")}
           </h1>
           <p className="text-text-mid text-[14px]">
-            {t.subtitle}
+            {t("subtitle", "Translate climate predictions into actionable farming decisions.")}
           </p>
         </div>
 
-        {/* Language Toggles */}
-        <div className="bg-glass-fill border border-glass-borderSoft p-1 rounded-full flex gap-1.5">
-          <button 
-            onClick={() => setLang("en")}
+        {/* Language & Audio Controls */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePlayVoice}
             className={clsx(
-              "font-mono text-[10.5px] px-3.5 py-1 rounded-full cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50",
-              lang === "en" ? "bg-text-hi text-white font-semibold" : "text-text-mid hover:text-text-hi"
+              "font-mono text-[11px] font-semibold px-3 py-1.5 rounded-full border flex items-center gap-1.5 cursor-pointer transition-all duration-200",
+              isSpeaking 
+                ? "bg-rose-500/20 text-rose-600 border-rose-500/30 animate-pulse" 
+                : "bg-glass-fill border-glass-borderSoft text-text-hi hover:scale-105 active:scale-95"
             )}
+            title={isSpeaking ? t("stop_voice", "Stop Audio") : t("listen_advisory", "Listen to Advisory")}
           >
-            English
+            {isSpeaking ? <VolumeX size={13} /> : <Volume2 size={13} className="text-violet-500 animate-bounce" />}
+            <span>{isSpeaking ? t("stop_voice", "Stop") : t("listen_advisory", "Listen")}</span>
           </button>
-          <button 
-            onClick={() => setLang("hi")}
-            className={clsx(
-              "font-mono text-[10.5px] px-3.5 py-1 rounded-full cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50",
-              lang === "hi" ? "bg-text-hi text-white font-semibold" : "text-text-mid hover:text-text-hi"
-            )}
-          >
-            हिन्दी
-          </button>
+
+          <div className="bg-glass-fill border border-glass-borderSoft p-1 rounded-full flex gap-1.5">
+            <button 
+              onClick={() => setLanguage("en")}
+              className={clsx(
+                "font-mono text-[10.5px] px-3.5 py-1 rounded-full cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95",
+                language === "en" ? "bg-text-hi text-white font-semibold" : "text-text-mid hover:text-text-hi"
+              )}
+            >
+              English
+            </button>
+            <button 
+              onClick={() => setLanguage("hi")}
+              className={clsx(
+                "font-mono text-[10.5px] px-3.5 py-1 rounded-full cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95",
+                language === "hi" ? "bg-text-hi text-white font-semibold" : "text-text-mid hover:text-text-hi"
+              )}
+            >
+              हिन्दी
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Interactive Climate Scenario Simulator Bar */}
+      <div className="glass-panel p-4 flex flex-col gap-2.5">
+        <div className="flex items-center gap-2">
+          <Filter size={14} className="text-violet-500 shrink-0" />
+          <span className="font-mono text-[10.5px] text-text-lo uppercase tracking-[.06em]">
+            {t("scenario_sim_label", "Simulate Climate Risk Scenario:")}
+          </span>
+        </div>
+
+        <div className="flex gap-2 flex-wrap font-mono text-[10.5px]">
+          {[
+            { id: "LIVE", label: "LIVE PIPELINE" },
+            { id: "FALSE_ONSET", label: "FALSE-ONSET RISK" },
+            { id: "BREAK_SPELL", label: "HIGH DRY-SPELL RISK" },
+            { id: "HEAVY_RAIN", label: "HEAVY RAINFALL ALERT" }
+          ].map((sc) => (
+            <button
+              key={sc.id}
+              onClick={() => setActiveScenario(sc.id)}
+              className={clsx(
+                "px-3 py-1.5 rounded-full border cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95",
+                activeScenario === sc.id 
+                  ? "bg-violet-500 text-white font-semibold border-transparent shadow-sm" 
+                  : "bg-glass-fill2 border-glass-borderSoft text-text-mid hover:text-text-hi"
+              )}
+            >
+              {sc.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -123,28 +199,28 @@ export default function AdvisoryPage() {
         {/* Left Side: Highlighted Decision Card & Grid details */}
         <div className="flex flex-col gap-6">
           {/* Main Action Required Highlight */}
-          <div className="glass-panel p-6 border-l-4 border-amber-500 bg-gradient-to-r from-amber-500/5 to-transparent relative overflow-hidden flex flex-col justify-between">
+          <div className={clsx("glass-panel p-6 border-l-4 relative overflow-hidden flex flex-col justify-between transition-all duration-300", activeContent.badgeColor)}>
             <div className="absolute -top-12 -right-12 w-48 h-48 bg-amber-500/10 blur-[50px] rounded-full pointer-events-none"></div>
             
             <div>
               <div className="font-mono text-[10px] tracking-[.14em] text-amber-600 font-semibold mb-3 flex items-center gap-1.5 uppercase">
                 <AlertTriangle size={14} />
-                {t.actionRequired}
+                {activeContent.badge}
               </div>
-              <h2 className="font-display font-bold text-[24px] text-text-hi tracking-wide mb-3 leading-tight">
-                {t.advisoryTitle}
+              <h2 className="font-display font-bold text-[22px] text-text-hi tracking-wide mb-3 leading-tight uppercase animate-fadeIn" key={`title-${activeScenario}`}>
+                {activeContent.title}
               </h2>
-              <p className="text-[14.5px] text-text-mid leading-relaxed mb-6">
-                {t.advisoryReason}
+              <p className="text-[14px] text-text-mid leading-relaxed mb-6 animate-fadeIn" key={`action-${activeScenario}`}>
+                {activeContent.action}
               </p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pt-5 border-t border-glass-borderSoft">
-              <AdvisorySpec label="Location" val={t.location} />
-              <AdvisorySpec label="Crop" val={t.crop} />
-              <AdvisorySpec label="Break Prob." val={t.breakProb} />
-              <AdvisorySpec label="Soil Moisture" val={t.soilMoist} />
-              <AdvisorySpec label="Confidence" val={t.confidence} highlight />
+              <AdvisorySpec label="Location" val="Meerut" />
+              <AdvisorySpec label="Crop" val={t(`crop_${crop.toLowerCase()}`, crop)} />
+              <AdvisorySpec label="Break Prob." val={activeContent.breakProb} />
+              <AdvisorySpec label="Soil Moisture" val={activeContent.soilMoist} />
+              <AdvisorySpec label="Confidence" val={activeContent.confidence} highlight />
             </div>
           </div>
 
@@ -153,14 +229,14 @@ export default function AdvisoryPage() {
             <div className="flex flex-col gap-3 mt-1 mb-1">
               <div className="flex justify-between items-center">
                 <span className="font-mono text-[10px] tracking-[.1em] text-violet-500 uppercase">
-                  {t.liveAlerts} ({displayedAdvisories.length} OF {liveAdvisories.length})
+                  {t("liveAlerts", "LIVE DATABASE ALERTS")} ({displayedAdvisories.length} OF {liveAdvisories.length})
                 </span>
                 {liveAdvisories.length > maxAlertCap && (
                   <button
                     onClick={() => setShowAllAlerts(!showAllAlerts)}
                     className="font-mono text-[10.5px] text-teal-600 hover:text-teal-700 flex items-center gap-1 cursor-pointer transition-colors"
                   >
-                    <span>{showAllAlerts ? t.showLess : `${t.showMore} (${liveAdvisories.length - maxAlertCap}+)`}</span>
+                    <span>{showAllAlerts ? t("showLess", "Show Less") : `${t("showMore", "Show More Alerts")} (${liveAdvisories.length - maxAlertCap}+)`}</span>
                     {showAllAlerts ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                   </button>
                 )}
@@ -181,26 +257,26 @@ export default function AdvisoryPage() {
 
           {/* Sub advisory crop grids */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <SubAdvisoryCard icon={<Sprout size={16} />} title={t.sowingTitle} desc={t.sowingDesc} type="SOWING" />
-            <SubAdvisoryCard icon={<Droplets size={16} />} title={t.irrigationTitle} desc={t.irrigationDesc} type="IRRIGATION" />
-            <SubAdvisoryCard icon={<ShieldAlert size={16} />} title={t.drainageTitle} desc={t.drainageDesc} type="DRAINAGE" />
-            <SubAdvisoryCard icon={<Sparkles size={16} />} title={t.healthTitle} desc={t.healthDesc} type="CROP HEALTH" />
+            <SubAdvisoryCard icon={<Sprout size={16} />} title={t("sowingTitle", "Delay sowing")} desc={t("sowingDesc", "Wait for rainfall persistence before planting.")} type="SOWING" />
+            <SubAdvisoryCard icon={<Droplets size={16} />} title={t("irrigationTitle", "Monitor irrigation")} desc={t("irrigationDesc", "Current soil moisture is adequate, but conditions may change.")} type="IRRIGATION" />
+            <SubAdvisoryCard icon={<ShieldAlert size={16} />} title={t("drainageTitle", "Prepare drainage")} desc={t("drainageDesc", "Heavy rainfall probability is increasing.")} type="DRAINAGE" />
+            <SubAdvisoryCard icon={<Sparkles size={16} />} title={t("healthTitle", "Monitor crop stress")} desc={t("healthDesc", "Dry spell probability is elevated.")} type="CROP HEALTH" />
           </div>
         </div>
 
-        {/* Right Side: Timeline */}
+        {/* Right Side: Interactive Decision Timeline */}
         <div className="glass-panel p-5.5 flex flex-col justify-between min-h-[400px]">
           <div>
-            <span className="panel-label">Advisory Decision Timeline</span>
+            <span className="panel-label">Advisory Decision Timeline ({activeScenario})</span>
             
             <div className="relative mt-8 ml-2 flex flex-col gap-8">
               {/* Vertical line connector */}
               <div className="absolute left-[9px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-violet-500 via-teal-500 to-rose-400"></div>
 
-              <TimelineStep step="TODAY" desc={t.timelineToday} color="bg-violet-500" />
-              <TimelineStep step="NEXT 3 DAYS" desc={t.timeline3Days} color="bg-teal-500" />
-              <TimelineStep step="NEXT 7 DAYS" desc={t.timeline7Days} color="bg-amber-500" />
-              <TimelineStep step="NEXT 14 DAYS" desc={t.timeline14Days} color="bg-rose-500" />
+              <TimelineStep step="TODAY" desc={activeContent.timelineToday} color="bg-violet-500" />
+              <TimelineStep step="NEXT 3 DAYS" desc={activeContent.timeline3Days} color="bg-teal-500" />
+              <TimelineStep step="NEXT 7 DAYS" desc={activeContent.timeline7Days} color="bg-amber-500" />
+              <TimelineStep step="NEXT 14 DAYS" desc={activeContent.timeline14Days} color="bg-rose-500" />
             </div>
           </div>
 

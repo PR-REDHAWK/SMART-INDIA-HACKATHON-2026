@@ -39,8 +39,10 @@ export const translations = {
     // Voice Assistant
     voice_summary: "Voice Summary",
     listen_voice: "Listen to Voice Summary",
+    listen_advisory: "Listen to Advisory",
     stop_voice: "Stop Audio",
     speaking_now: "Speaking Forecast...",
+    speaking_advisory: "Speaking Advisory...",
 
     // KPI Strip
     kpi_onset_label: "14D Monsoon Onset Likelihood",
@@ -66,6 +68,9 @@ export const translations = {
     risk_very_high: "VERY HIGH RISK",
     risk_moderate: "MODERATE RISK",
     risk_low: "LOW RISK",
+    select_crop_label: "Select Crop:",
+    select_stage_label: "Growth Stage:",
+    scenario_sim_label: "Simulate Climate Scenario:",
 
     // Advisory Codes & Fallbacks
     advisory_default_title: "Delay sowing by 3–4 days",
@@ -90,6 +95,23 @@ export const translations = {
     code_ROUTINE_MONITORING_title: "ℹ️ Routine Weather Monitoring",
     code_ROUTINE_MONITORING_action: "Continue standard field practices and routine monitoring.",
     code_ROUTINE_MONITORING_msg: "No immediate extreme weather risk detected over the next 7–14 days.",
+
+    // Crop & Stage specific advisory actions
+    adv_rice_sowing: "Delay rain-dependent Rice sowing until continuous monsoon onset is confirmed. Keep nursery beds covered.",
+    adv_rice_vegetative: "Maintain 2-5 cm standing water in paddy fields. Monitor for stem borer and leaf folder pests.",
+    adv_rice_flowering: "Ensure adequate water supply during flowering stage. Avoid field draining to prevent grain sterility.",
+
+    adv_maize_sowing: "Sow Maize on raised beds to prevent seed rot from sudden heavy rainfall events. Maintain optimum moisture.",
+    adv_maize_vegetative: "Apply top-dressing nitrogen fertilizer when soil moisture is adequate. Clear drainage furrows.",
+    adv_maize_flowering: "Protect silks from extreme moisture stress. Ensure field remains free from standing water.",
+
+    adv_cotton_sowing: "Delay Cotton sowing if dry spell risk is high. Sow when topsoil moisture reaches 15-20 cm depth.",
+    adv_cotton_vegetative: "Perform intercultural weeding and earthing up. Monitor for sucking pests like aphids and jassids.",
+    adv_cotton_flowering: "Avoid excess nitrogen application to prevent boll shedding. Maintain uniform soil moisture.",
+
+    adv_soybean_sowing: "Treat Soybean seeds with Bradyrhizobium inoculant before sowing. Sow at 3-4 cm depth.",
+    adv_soybean_vegetative: "Keep field weed-free during first 30-45 days. Inspect for tobacco caterpillar and girdle beetle.",
+    adv_soybean_flowering: "Critical moisture requirement stage. Provide protective irrigation if dry spell exceeds 7 days.",
 
     // Crops & Stages
     crop_rice: "Rice",
@@ -186,8 +208,10 @@ export const translations = {
     // Voice Assistant
     voice_summary: "ऑडियो सारांश",
     listen_voice: "ऑडियो सारांश सुनें",
+    listen_advisory: "कृषि सलाह सुनें",
     stop_voice: "ऑडियो बंद करें",
     speaking_now: "पूर्वानुमान बोल रहा है...",
+    speaking_advisory: "कृषि सलाह बोल रहा है...",
 
     // KPI Strip
     kpi_onset_label: "14-दिवसीय मानसून आगमन संभावना",
@@ -213,6 +237,9 @@ export const translations = {
     risk_very_high: "अत्यधिक उच्च जोखिम",
     risk_moderate: "मध्यम जोखिम",
     risk_low: "कम जोखिम",
+    select_crop_label: "फसल चुनें:",
+    select_stage_label: "वृद्धि अवस्था:",
+    scenario_sim_label: "जलवायु परिदृश्य का परीक्षण करें:",
 
     // Advisory Codes & Fallbacks
     advisory_default_title: "बुआई 3-4 दिन टालें",
@@ -237,6 +264,23 @@ export const translations = {
     code_ROUTINE_MONITORING_title: "ℹ️ नियमित मौसम निगरानी",
     code_ROUTINE_MONITORING_action: "सामान्य कृषि कार्य और नियमित खेत निरीक्षण जारी रखें।",
     code_ROUTINE_MONITORING_msg: "अगले 7-14 दिनों में कोई तात्कालिक गंभीर मौसम जोखिम नहीं है।",
+
+    // Crop & Stage specific advisory actions in Hindi
+    adv_rice_sowing: "मानसून आगमन की पुष्टि होने तक धान की बुआई टालें। नर्सरी को ढककर रखें।",
+    adv_rice_vegetative: "धान के खेत में 2-5 सेमी पानी बनाए रखें। तना छेदक कीट की निगरानी करें।",
+    adv_rice_flowering: "पुष्पन अवस्था में पर्याप्त पानी सुनिश्चित करें। दाना बनने तक खेत न सुखाएं।",
+
+    adv_maize_sowing: "अचानक भारी बारिश से बीज सड़न रोकने के लिए मक्के की बुआई मेढ़ों (raised beds) पर करें।",
+    adv_maize_vegetative: "पर्याप्त नमी मिलने पर नाइट्रोजन की टॉप-ड्रेसिंग करें। जल निकासी नाली साफ रखें।",
+    adv_maize_flowering: "सिल्किंग अवस्था में नमी के तनाव से बचाएं। खेत में जलजमाव न होने दें।",
+
+    adv_cotton_sowing: "सूखा काल का जोखिम होने पर कपास की बुआई टालें। मिट्टी में 15-20 सेमी गहराई तक नमी होने पर ही बुआई करें।",
+    adv_cotton_vegetative: "खेत को खरपतवार मुक्त रखें। माहू (aphids) और चेपा कीट की नियमित निगरानी करें।",
+    adv_cotton_flowering: "फूल एवं कलियां झड़ने से रोकने के लिए संतुलित सिंचाई करें और अधिक नाइट्रोजन न डालें।",
+
+    adv_soybean_sowing: "बुआई से पहले सोयाबीन के बीज को राइजोबियम से उपचारित करें। 3-4 सेमी गहराई पर बुआई करें।",
+    adv_soybean_vegetative: "शुरुआती 30-45 दिनों तक खेत को खरपतवार मुक्त रखें। तना मक्खी की निगरानी करें।",
+    adv_soybean_flowering: "अत्यंत संवेदनशील अवस्था। यदि सूखा 7 दिन से अधिक रहे तो जीवन रक्षक सिंचाई दें।",
 
     // Crops & Stages
     crop_rice: "धान / चावल",
