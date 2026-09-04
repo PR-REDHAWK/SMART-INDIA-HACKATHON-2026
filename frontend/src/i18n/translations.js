@@ -36,6 +36,12 @@ export const translations = {
     metric_soil_moist: "Soil Moist.",
     metric_confidence: "Confidence",
 
+    // Voice Assistant
+    voice_summary: "Voice Summary",
+    listen_voice: "Listen to Voice Summary",
+    stop_voice: "Stop Audio",
+    speaking_now: "Speaking Forecast...",
+
     // KPI Strip
     kpi_onset_label: "14D Monsoon Onset Likelihood",
     kpi_break_label: "14D Break Spell Risk",
@@ -167,6 +173,12 @@ export const translations = {
     metric_heavy_7d: "भारी बारिश (7 दिन)",
     metric_soil_moist: "मृदा नमी",
     metric_confidence: "विश्वसनीयता",
+
+    // Voice Assistant
+    voice_summary: "ऑडियो सारांश",
+    listen_voice: "ऑडियो सारांश सुनें",
+    stop_voice: "ऑडियो बंद करें",
+    speaking_now: "पूर्वानुमान बोल रहा है...",
 
     // KPI Strip
     kpi_onset_label: "14-दिवसीय मानसून आगमन संभावना",
