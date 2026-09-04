@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { AlertTriangle, Calendar, Sprout, Droplets, ShieldAlert, Sparkles } from "lucide-react";
+import { AlertTriangle, Calendar, Sprout, Droplets, ShieldAlert, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import clsx from "clsx";
 
 const texts = {
@@ -25,7 +25,10 @@ const texts = {
     timelineToday: "Monitor conditions",
     timeline3Days: "Avoid premature sowing",
     timeline7Days: "Expected rainfall window",
-    timeline14Days: "Possible dry spell"
+    timeline14Days: "Possible dry spell",
+    liveAlerts: "LIVE DATABASE ALERTS",
+    showMore: "Show More Alerts",
+    showLess: "Show Less"
   },
   hi: {
     title: "कृषि संबंधी सलाह",
@@ -49,13 +52,17 @@ const texts = {
     timelineToday: "स्थितियों की निगरानी करें",
     timeline3Days: "समय से पहले बुवाई से बचें",
     timeline7Days: "अपेक्षित वर्षा की खिड़की",
-    timeline14Days: "संभावित सूखा समय"
+    timeline14Days: "संभावित सूखा समय",
+    liveAlerts: "लाइव डेटाबेस चेतावनियां",
+    showMore: "और चेतावनियां देखें",
+    showLess: "कम देखें"
   }
 };
 
 export default function AdvisoryPage() {
   const [lang, setLang] = useState("en");
   const [liveAdvisories, setLiveAdvisories] = useState([]);
+  const [showAllAlerts, setShowAllAlerts] = useState(false);
   
   const t = texts[lang];
 
@@ -65,6 +72,10 @@ export default function AdvisoryPage() {
       .then(data => setLiveAdvisories(data))
       .catch(err => console.error(err));
   }, []);
+
+  // Cap displayed alerts to top 3 items unless user clicks 'Show More'
+  const maxAlertCap = 3;
+  const displayedAdvisories = showAllAlerts ? liveAdvisories : liveAdvisories.slice(0, maxAlertCap);
 
   return (
     <div className="flex flex-col gap-6">
@@ -137,11 +148,25 @@ export default function AdvisoryPage() {
             </div>
           </div>
 
-          {/* Live API Advisories */}
+          {/* Live API Advisories — Capped at top 3 items */}
           {liveAdvisories.length > 0 && (
-            <div className="flex flex-col gap-3 mt-2 mb-2">
-              <span className="font-mono text-[10px] tracking-[.1em] text-violet-500 uppercase">Live Database Alerts</span>
-              {liveAdvisories.map(adv => (
+            <div className="flex flex-col gap-3 mt-1 mb-1">
+              <div className="flex justify-between items-center">
+                <span className="font-mono text-[10px] tracking-[.1em] text-violet-500 uppercase">
+                  {t.liveAlerts} ({displayedAdvisories.length} OF {liveAdvisories.length})
+                </span>
+                {liveAdvisories.length > maxAlertCap && (
+                  <button
+                    onClick={() => setShowAllAlerts(!showAllAlerts)}
+                    className="font-mono text-[10.5px] text-teal-600 hover:text-teal-700 flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <span>{showAllAlerts ? t.showLess : `${t.showMore} (${liveAdvisories.length - maxAlertCap}+)`}</span>
+                    {showAllAlerts ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                  </button>
+                )}
+              </div>
+
+              {displayedAdvisories.map(adv => (
                 <div key={adv.id} className="glass-panel p-4 border-l-4 border-rose-500 flex flex-col gap-2">
                   <div className="flex justify-between items-center">
                     <span className="font-mono text-[10px] bg-rose-500/10 text-rose-600 px-2 py-0.5 rounded-full uppercase">{adv.advisory_type} - {adv.crop}</span>
