@@ -133,9 +133,12 @@ export const translations = {
     crop_onion: "Onion",
     crop_barley: "Barley",
     stage_sowing: "Sowing",
-    stage_establishment: "Establishment",
+    stage_germination___establishment: "Germination / Establishment",
+    stage_establishment: "Germination / Establishment",
     stage_vegetative: "Vegetative",
     stage_flowering: "Flowering",
+    stage_grain_fruit_development: "Grain/Fruit Development",
+    stage_harvest: "Harvest",
 
     // Advisory Feed & Delivery Channels
     feed_title: "Recent Alerts & Advisories",
@@ -313,9 +316,12 @@ export const translations = {
     crop_onion: "प्याज",
     crop_barley: "जौ",
     stage_sowing: "बुआई अवस्था",
+    stage_germination___establishment: "अंकुरण अवस्था",
     stage_establishment: "अंकुरण अवस्था",
     stage_vegetative: "वानस्पतिक वृद्धि",
     stage_flowering: "पुष्पन अवस्था",
+    stage_grain_fruit_development: "दाना / फल विकास",
+    stage_harvest: "फसल कटाई",
 
     // Advisory Feed & Delivery Channels
     feed_title: "हाल की चेतावनियां और कृषि सलाह",

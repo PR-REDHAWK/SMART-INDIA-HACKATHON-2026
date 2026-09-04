@@ -20,6 +20,7 @@ class ForecastPredictRequest(BaseModel):
     crop_name: str = "Rice"
     growth_stage: str = "Sowing"
     soil_moisture_pct: Optional[float] = 25.0
+    lang: Optional[str] = "en"
 
 @router.post("/forecast/predict")
 def predict_forecast(req: ForecastPredictRequest):
@@ -32,7 +33,8 @@ def predict_forecast(req: ForecastPredictRequest):
             prediction_date_str=req.prediction_date,
             crop_name=req.crop_name,
             growth_stage=req.growth_stage,
-            soil_moisture_pct=req.soil_moisture_pct
+            soil_moisture_pct=req.soil_moisture_pct,
+            lang=req.lang or "en"
         )
         return res
     except Exception as e:
@@ -44,7 +46,8 @@ def get_live_forecast(
     prediction_date: str = Query("2024-06-15", description="Prediction date (YYYY-MM-DD)"),
     crop_name: str = Query("Rice", description="Crop name"),
     growth_stage: str = Query("Sowing", description="Growth stage"),
-    soil_moisture_pct: Optional[float] = Query(25.0, description="Soil moisture percentage")
+    soil_moisture_pct: Optional[float] = Query(25.0, description="Soil moisture percentage"),
+    lang: Optional[str] = Query("en", description="Language code ('en' or 'hi')")
 ):
     """
     GET endpoint executing live production inference for dashboard widgets.
@@ -55,7 +58,8 @@ def get_live_forecast(
             prediction_date_str=prediction_date,
             crop_name=crop_name,
             growth_stage=growth_stage,
-            soil_moisture_pct=soil_moisture_pct
+            soil_moisture_pct=soil_moisture_pct,
+            lang=lang or "en"
         )
         return res
     except Exception as e:

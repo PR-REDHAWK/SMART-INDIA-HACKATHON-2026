@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { TriangleAlert, Sprout, Wind, Droplet, ShieldAlert, CheckCircle2, Volume2, VolumeX, Filter } from "lucide-react";
 import clsx from "clsx";
 import { useLanguage } from "../../context/LanguageContext";
@@ -8,34 +8,43 @@ export default function AdvisoryCard({ liveForecast }) {
   const { language, t } = useLanguage();
   const { speak, stop, isSpeaking } = useTextToSpeech();
 
-  const adv = liveForecast?.advisory;
-  const meta = liveForecast?.metadata;
-
   // Interactive Crop & Stage Filter States
   const [selectedCrop, setSelectedCrop] = useState("Rice");
   const [selectedStage, setSelectedStage] = useState("Sowing");
+  const [dynamicForecast, setDynamicForecast] = useState(liveForecast);
 
-  const popularCrops = ["Rice", "Wheat", "Maize", "Cotton", "Soybean", "Sugarcane", "Mustard"];
+  const popularCrops = ["Rice", "Wheat", "Maize", "Cotton", "Soybean", "Sugarcane", "Mustard", "Potato", "Onion"];
+  const allStages = ["Sowing", "Germination / Establishment", "Vegetative", "Flowering", "Grain/Fruit Development", "Harvest"];
 
-  const code = adv?.advisory_code || "BREAK_SPELL_WARNING";
+  const stateName = liveForecast?.metadata?.requested_location || liveForecast?.metadata?.resolved_state || "Uttar Pradesh";
+
+  // Real-time API query whenever selected crop, growth stage, location, or language changes
+  useEffect(() => {
+    fetch(`/api/v1/forecast/live?state=${encodeURIComponent(stateName)}&prediction_date=2024-06-15&crop_name=${encodeURIComponent(selectedCrop)}&growth_stage=${encodeURIComponent(selectedStage)}&soil_moisture_pct=25.0&lang=${encodeURIComponent(language)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status === "SUCCESS") {
+          setDynamicForecast(data);
+        }
+      })
+      .catch((err) => console.error("Error updating AdvisoryCard crop-stage forecast:", err));
+  }, [stateName, selectedCrop, selectedStage, language, liveForecast]);
+
+  const adv = dynamicForecast?.advisory || liveForecast?.advisory;
+  const meta = dynamicForecast?.metadata || liveForecast?.metadata;
+
   const rawTitle = adv?.title || "Delay sowing by 3–4 days";
-  const rawPrimaryAction = adv?.primary_action || "A possible dry spell may follow expected rainfall. Delay rain-dependent sowing until sustained moisture settles.";
-  
-  // Crop & Stage specific advice lookup
-  const cropKey = `adv_${selectedCrop.toLowerCase().replace(/[^a-z0-9]/g, "_")}_${selectedStage.toLowerCase()}`;
-  const customCropAction = t(cropKey, null);
+  const primaryAction = adv?.primary_action || "A possible dry spell may follow expected rainfall. Adjust field practices accordingly.";
+  const supportingActions = adv?.supporting_actions && adv.supporting_actions.length > 0 
+    ? adv.supporting_actions 
+    : [
+        t("adv_action_1", "Prepare supplemental irrigation alternatives"),
+        t("adv_action_2", "Keep nursery beds covered and hydrated")
+      ];
 
-  // Translate advisory title and action
-  const title = t(`code_${code}_title`, rawTitle);
-  const primaryAction = customCropAction || t(`code_${code}_action`, rawPrimaryAction);
-
-  const supportingActions = [
-    t("adv_action_1", "Prepare supplemental irrigation alternatives"),
-    t("adv_action_2", "Keep nursery beds covered and hydrated")
-  ];
-
+  const title = rawTitle;
   const cropName = t(`crop_${selectedCrop.toLowerCase().replace(/[^a-z0-9]/g, "_")}`, selectedCrop);
-  const stage = t(`stage_${selectedStage.toLowerCase()}`, selectedStage);
+  const stage = t(`stage_${selectedStage.toLowerCase().replace(/[^a-z0-9]/g, "_")}`, selectedStage);
 
   const riskLevel = adv?.risk_level || "HIGH";
   const isFalseOnset = adv?.false_onset_risk || false;
@@ -50,7 +59,7 @@ export default function AdvisoryCard({ liveForecast }) {
       stop();
       return;
     }
-    const textToSpeak = `${title}. ${primaryAction}`;
+    const textToSpeak = `${cropName}, ${stage}. ${title}. ${primaryAction}`;
     speak(textToSpeak, language);
   };
 
@@ -92,54 +101,60 @@ export default function AdvisoryCard({ liveForecast }) {
         </div>
 
         {/* Interactive Crop & Stage Pill Selectors */}
-        <div className="flex flex-col gap-2 mb-4 p-2.5 rounded-xl bg-glass-fill2 border border-glass-borderSoft">
+        <div className="flex flex-col gap-2.5 mb-4 p-3 rounded-xl bg-glass-fill2 border border-glass-borderSoft">
+          {/* Crop Selector */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-mono text-[10px] text-text-lo uppercase flex items-center gap-1">
+            <span className="font-mono text-[10px] text-text-lo uppercase flex items-center gap-1 shrink-0 font-semibold">
               <Filter size={11} className="text-amber-500" /> {t("select_crop_label", "Crop:")}
             </span>
-            {popularCrops.map((c) => (
-              <button
-                key={c}
-                onClick={() => setSelectedCrop(c)}
-                className={clsx(
-                  "font-mono text-[10px] px-2.5 py-0.5 rounded-full border cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95",
-                  selectedCrop === c 
-                    ? "bg-teal-500 text-white border-transparent font-semibold shadow-sm" 
-                    : "bg-glass-fill border-glass-borderSoft text-text-mid hover:text-text-hi"
-                )}
-              >
-                {t(`crop_${c.toLowerCase().replace(/[^a-z0-9]/g, "_")}`, c)}
-              </button>
-            ))}
+            <div className="flex gap-1.5 flex-wrap">
+              {popularCrops.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setSelectedCrop(c)}
+                  className={clsx(
+                    "font-mono text-[10px] px-2.5 py-0.5 rounded-full border cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95",
+                    selectedCrop === c 
+                      ? "bg-teal-500 text-white border-transparent font-semibold shadow-sm" 
+                      : "bg-glass-fill border-glass-borderSoft text-text-mid hover:text-text-hi"
+                  )}
+                >
+                  {t(`crop_${c.toLowerCase().replace(/[^a-z0-9]/g, "_")}`, c)}
+                </button>
+              ))}
+            </div>
           </div>
 
+          {/* Stage Selector (All 6 Growth Stages) */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-mono text-[10px] text-text-lo uppercase flex items-center gap-1">
+            <span className="font-mono text-[10px] text-text-lo uppercase flex items-center gap-1 shrink-0 font-semibold">
               <Sprout size={11} className="text-teal-500" /> {t("select_stage_label", "Stage:")}
             </span>
-            {["Sowing", "Vegetative", "Flowering", "Harvest"].map((s) => (
-              <button
-                key={s}
-                onClick={() => setSelectedStage(s)}
-                className={clsx(
-                  "font-mono text-[10px] px-2.5 py-0.5 rounded-full border cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95",
-                  selectedStage === s 
-                    ? "bg-violet-500 text-white border-transparent font-semibold shadow-sm" 
-                    : "bg-glass-fill border-glass-borderSoft text-text-mid hover:text-text-hi"
-                )}
-              >
-                {t(`stage_${s.toLowerCase()}`, s)}
-              </button>
-            ))}
+            <div className="flex gap-1.5 flex-wrap">
+              {allStages.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setSelectedStage(s)}
+                  className={clsx(
+                    "font-mono text-[10px] px-2.5 py-0.5 rounded-full border cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95",
+                    selectedStage === s 
+                      ? "bg-violet-500 text-white border-transparent font-semibold shadow-sm" 
+                      : "bg-glass-fill border-glass-borderSoft text-text-mid hover:text-text-hi"
+                  )}
+                >
+                  {t(`stage_${s.toLowerCase().replace(/[^a-z0-9]/g, "_")}`, s)}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Title & Dynamic Action Recommendation */}
-        <h2 className="font-display text-[19px] font-bold text-text-hi mb-2 leading-tight uppercase animate-fadeIn" key={`title-${selectedCrop}-${selectedStage}`}>
+        <h2 className="font-display text-[18px] font-bold text-text-hi mb-2 leading-tight uppercase animate-fadeIn" key={`title-${selectedCrop}-${selectedStage}-${language}`}>
           {title}
         </h2>
         
-        <p className="text-[13.5px] text-text-mid leading-relaxed mb-4 max-w-xl animate-fadeIn" key={`action-${selectedCrop}-${selectedStage}`}>
+        <p className="text-[13.5px] text-text-mid leading-relaxed mb-4 max-w-xl animate-fadeIn" key={`action-${selectedCrop}-${selectedStage}-${language}`}>
           {primaryAction}
         </p>
 

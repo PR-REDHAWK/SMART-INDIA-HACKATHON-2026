@@ -19,13 +19,15 @@ class AdvisoryEngine:
         self.false_onset_onset_thresh = false_onset_onset_thresh
         self.false_onset_break_thresh = false_onset_break_thresh
 
-    def generate_advisory(self, forecast: ForecastProbabilities, crop_ctx: CropContext) -> AdvisoryOutput:
+    def generate_advisory(self, forecast: ForecastProbabilities, crop_ctx: CropContext, lang: str = "en") -> AdvisoryOutput:
         """
         Executes deterministic rule hierarchy to produce structured AdvisoryOutput.
+        Supports English ('en') and Hindi ('hi').
         """
         crop_name = crop_ctx.crop_name
         stage = crop_ctx.growth_stage
         sm = crop_ctx.soil_moisture_pct
+        is_hi = (lang == "hi")
 
         # Extract peak probabilities & horizons
         onset_max = max(forecast.onset_7d, forecast.onset_14d, forecast.onset_21d, forecast.onset_30d)
@@ -47,7 +49,7 @@ class AdvisoryEngine:
         # PRIORITY 1: FALSE-ONSET RISK (Conflicting Onset + Break)
         if is_false_onset:
             risk_lvl = get_risk_level(max(forecast.onset_14d, forecast.break_14d))
-            primary, supp = generate_crop_stage_action(crop_name, stage, "FALSE_ONSET", sm)
+            primary, supp = generate_crop_stage_action(crop_name, stage, "FALSE_ONSET", sm, lang=lang)
             return AdvisoryOutput(
                 risk_level=risk_lvl,
                 event_type="FALSE_ONSET",
@@ -57,8 +59,8 @@ class AdvisoryEngine:
                 false_onset_risk=True,
                 crop_name=crop_name,
                 growth_stage=stage,
-                title="⚠️ False-Onset Risk Warning",
-                message=f"Monsoon onset appears likely ({forecast.onset_14d:.0f}%), but break-spell risk remains high ({forecast.break_14d:.0f}%) over the next 14 days.",
+                title="⚠️ झूठे-आगमन (False-Onset) का जोखिम" if is_hi else "⚠️ False-Onset Risk Warning",
+                message=f"मानसून का आगमन संभावित है ({forecast.onset_14d:.0f}%), लेकिन अगले 14 दिनों में सूखा काल का जोखिम उच्च है ({forecast.break_14d:.0f}%)।" if is_hi else f"Monsoon onset appears likely ({forecast.onset_14d:.0f}%), but break-spell risk remains high ({forecast.break_14d:.0f}%) over the next 14 days.",
                 primary_action=primary,
                 supporting_actions=supp,
                 reasoning=f"Onset 14D ({forecast.onset_14d:.0f}%) >= {self.false_onset_onset_thresh}% AND Break 14D ({forecast.break_14d:.0f}%) >= {self.false_onset_break_thresh}%. High risk of early dry spell after initial rain.",
@@ -70,7 +72,7 @@ class AdvisoryEngine:
             horizon = 7 if forecast.heavy_rain_7d >= 60.0 else 14
             prob = forecast.heavy_rain_7d if horizon == 7 else forecast.heavy_rain_14d
             risk_lvl = get_risk_level(prob)
-            primary, supp = generate_crop_stage_action(crop_name, stage, "HEAVY_RAIN", sm)
+            primary, supp = generate_crop_stage_action(crop_name, stage, "HEAVY_RAIN", sm, lang=lang)
 
             return AdvisoryOutput(
                 risk_level=risk_lvl,
@@ -81,8 +83,8 @@ class AdvisoryEngine:
                 false_onset_risk=False,
                 crop_name=crop_name,
                 growth_stage=stage,
-                title="⚡ High Heavy Rainfall Alert",
-                message=f"Heavy rainfall event probability is {prob:.0f}% over the next {horizon} days.",
+                title="⚡ भारी बारिश की चेतावनी" if is_hi else "⚡ High Heavy Rainfall Alert",
+                message=f"अगले {horizon} दिनों में भारी बारिश की संभावना {prob:.0f}% है।" if is_hi else f"Heavy rainfall event probability is {prob:.0f}% over the next {horizon} days.",
                 primary_action=primary,
                 supporting_actions=supp,
                 reasoning=f"Heavy Rain probability ({prob:.0f}%) exceeded high threshold (60%) at horizon {horizon}D.",
@@ -94,7 +96,7 @@ class AdvisoryEngine:
             horizon = 7 if forecast.break_7d >= 60.0 else (14 if forecast.break_14d >= 60.0 else 21)
             prob = forecast.break_7d if horizon == 7 else (forecast.break_14d if horizon == 14 else forecast.break_21d)
             risk_lvl = get_risk_level(prob)
-            primary, supp = generate_crop_stage_action(crop_name, stage, "BREAK_SPELL", sm)
+            primary, supp = generate_crop_stage_action(crop_name, stage, "BREAK_SPELL", sm, lang=lang)
 
             return AdvisoryOutput(
                 risk_level=risk_lvl,
@@ -105,8 +107,8 @@ class AdvisoryEngine:
                 false_onset_risk=False,
                 crop_name=crop_name,
                 growth_stage=stage,
-                title="🟠 High Dry-Spell Risk",
-                message=f"A prolonged dry spell (break spell) is likely ({prob:.0f}%) over the next {horizon} days.",
+                title="🟠 उच्च सूखा काल (Break-Spell) जोखिम" if is_hi else "🟠 High Dry-Spell Risk",
+                message=f"अगले {horizon} दिनों में लंबा सूखा काल संभावित है ({prob:.0f}%)।" if is_hi else f"A prolonged dry spell (break spell) is likely ({prob:.0f}%) over the next {horizon} days.",
                 primary_action=primary,
                 supporting_actions=supp,
                 reasoning=f"Break Spell probability ({prob:.0f}%) exceeded threshold (60%) at horizon {horizon}D.",
@@ -118,7 +120,7 @@ class AdvisoryEngine:
             horizon = 7 if forecast.onset_7d >= 60.0 else 14
             prob = forecast.onset_7d if horizon == 7 else forecast.onset_14d
             risk_lvl = get_risk_level(prob)
-            primary, supp = generate_crop_stage_action(crop_name, stage, "MONSOON_ONSET", sm)
+            primary, supp = generate_crop_stage_action(crop_name, stage, "MONSOON_ONSET", sm, lang=lang)
 
             return AdvisoryOutput(
                 risk_level=risk_lvl,
@@ -129,8 +131,8 @@ class AdvisoryEngine:
                 false_onset_risk=False,
                 crop_name=crop_name,
                 growth_stage=stage,
-                title="🟢 Favorable Monsoon Onset Alert",
-                message=f"Monsoon onset probability is favorable ({prob:.0f}%) over the next {horizon} days.",
+                title="🟢 अनुकूल मानसून आगमन चेतावनी" if is_hi else "🟢 Favorable Monsoon Onset Alert",
+                message=f"अगले {horizon} दिनों में मानसून आगमन की संभावना अनुकूल है ({prob:.0f}%)।" if is_hi else f"Monsoon onset probability is favorable ({prob:.0f}%) over the next {horizon} days.",
                 primary_action=primary,
                 supporting_actions=supp,
                 reasoning=f"Monsoon Onset probability ({prob:.0f}%) is high with low break-spell conflict.",
@@ -138,7 +140,7 @@ class AdvisoryEngine:
             )
 
         # PRIORITY 5: ROUTINE MONITORING (LOW / MODERATE RISK)
-        primary, supp = generate_crop_stage_action(crop_name, stage, "ROUTINE", sm)
+        primary, supp = generate_crop_stage_action(crop_name, stage, "ROUTINE", sm, lang=lang)
         return AdvisoryOutput(
             risk_level="LOW",
             event_type="ROUTINE",
@@ -148,8 +150,8 @@ class AdvisoryEngine:
             false_onset_risk=False,
             crop_name=crop_name,
             growth_stage=stage,
-            title="ℹ️ Routine Weather Monitoring",
-            message="No immediate extreme weather risk detected over the next 7–14 days.",
+            title="ℹ️ नियमित मौसम निगरानी" if is_hi else "ℹ️ Routine Weather Monitoring",
+            message="अगले 7–14 दिनों में कोई तात्कालिक गंभीर मौसम जोखिम नहीं है।" if is_hi else "No immediate extreme weather risk detected over the next 7–14 days.",
             primary_action=primary,
             supporting_actions=supp,
             reasoning="All event probabilities remain below high alert thresholds.",
