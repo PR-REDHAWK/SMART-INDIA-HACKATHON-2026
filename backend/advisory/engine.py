@@ -8,11 +8,11 @@ from typing import Dict, Optional
 try:
     from advisory.schemas import ForecastProbabilities, CropContext, AdvisoryOutput
     from advisory.rules import get_risk_level, detect_trend, FALSE_ONSET_CONFIG, SOIL_MOISTURE_CONFIG
-    from advisory.crops import CROP_PROFILES
+    from advisory.crops import generate_crop_stage_action
 except ImportError:
     from backend.advisory.schemas import ForecastProbabilities, CropContext, AdvisoryOutput
     from backend.advisory.rules import get_risk_level, detect_trend, FALSE_ONSET_CONFIG, SOIL_MOISTURE_CONFIG
-    from backend.advisory.crops import CROP_PROFILES
+    from backend.advisory.crops import generate_crop_stage_action
 
 class AdvisoryEngine:
     def __init__(self, false_onset_onset_thresh: float = 60.0, false_onset_break_thresh: float = 50.0):
@@ -47,6 +47,7 @@ class AdvisoryEngine:
         # PRIORITY 1: FALSE-ONSET RISK (Conflicting Onset + Break)
         if is_false_onset:
             risk_lvl = get_risk_level(max(forecast.onset_14d, forecast.break_14d))
+            primary, supp = generate_crop_stage_action(crop_name, stage, "FALSE_ONSET", sm)
             return AdvisoryOutput(
                 risk_level=risk_lvl,
                 event_type="FALSE_ONSET",
@@ -58,11 +59,8 @@ class AdvisoryEngine:
                 growth_stage=stage,
                 title="⚠️ False-Onset Risk Warning",
                 message=f"Monsoon onset appears likely ({forecast.onset_14d:.0f}%), but break-spell risk remains high ({forecast.break_14d:.0f}%) over the next 14 days.",
-                primary_action=f"Avoid relying solely on initial rainfall for {crop_name} {stage.lower()}. Delay rain-dependent sowing until sustained moisture settles.",
-                supporting_actions=[
-                    "Prepare supplemental irrigation alternatives",
-                    "Monitor soil moisture before committing seed"
-                ],
+                primary_action=primary,
+                supporting_actions=supp,
                 reasoning=f"Onset 14D ({forecast.onset_14d:.0f}%) >= {self.false_onset_onset_thresh}% AND Break 14D ({forecast.break_14d:.0f}%) >= {self.false_onset_break_thresh}%. High risk of early dry spell after initial rain.",
                 advisory_code="FALSE_ONSET_WARNING"
             )
@@ -72,13 +70,7 @@ class AdvisoryEngine:
             horizon = 7 if forecast.heavy_rain_7d >= 60.0 else 14
             prob = forecast.heavy_rain_7d if horizon == 7 else forecast.heavy_rain_14d
             risk_lvl = get_risk_level(prob)
-
-            actions = [
-                "Ensure drainage channels are clear of debris",
-                "Protect harvested produce and field inputs from water exposure"
-            ]
-            if sm is not None and sm >= SOIL_MOISTURE_CONFIG["WATERLOGGING_RISK"]:
-                actions.append("Critical waterlogging risk: refrain from all field irrigation")
+            primary, supp = generate_crop_stage_action(crop_name, stage, "HEAVY_RAIN", sm)
 
             return AdvisoryOutput(
                 risk_level=risk_lvl,
@@ -91,8 +83,8 @@ class AdvisoryEngine:
                 growth_stage=stage,
                 title="⚡ High Heavy Rainfall Alert",
                 message=f"Heavy rainfall event probability is {prob:.0f}% over the next {horizon} days.",
-                primary_action=f"Check and clear field drainage systems for {crop_name} ({stage}) to prevent waterlogging.",
-                supporting_actions=actions,
+                primary_action=primary,
+                supporting_actions=supp,
                 reasoning=f"Heavy Rain probability ({prob:.0f}%) exceeded high threshold (60%) at horizon {horizon}D.",
                 advisory_code="HEAVY_RAIN_WARNING"
             )
@@ -102,16 +94,7 @@ class AdvisoryEngine:
             horizon = 7 if forecast.break_7d >= 60.0 else (14 if forecast.break_14d >= 60.0 else 21)
             prob = forecast.break_7d if horizon == 7 else (forecast.break_14d if horizon == 14 else forecast.break_21d)
             risk_lvl = get_risk_level(prob)
-
-            if "Sowing" in stage or "Establishment" in stage:
-                primary = f"Delay rain-dependent {crop_name} sowing if practical due to imminent dry spell."
-                supp = ["Prepare supplemental irrigation facilities", "Keep nursery beds covered and hydrated"]
-            else:
-                if sm is not None and sm <= SOIL_MOISTURE_CONFIG["CRITICAL_DRY"]:
-                    primary = f"Soil moisture is critically low ({sm:.0f}%). Execute supplemental irrigation immediately for {crop_name} ({stage})."
-                else:
-                    primary = f"Prepare supplemental irrigation systems for {crop_name} ({stage}) to buffer against dry spell."
-                supp = ["Monitor soil moisture daily", "Apply organic mulch to conserve root-zone moisture"]
+            primary, supp = generate_crop_stage_action(crop_name, stage, "BREAK_SPELL", sm)
 
             return AdvisoryOutput(
                 risk_level=risk_lvl,
@@ -135,6 +118,7 @@ class AdvisoryEngine:
             horizon = 7 if forecast.onset_7d >= 60.0 else 14
             prob = forecast.onset_7d if horizon == 7 else forecast.onset_14d
             risk_lvl = get_risk_level(prob)
+            primary, supp = generate_crop_stage_action(crop_name, stage, "MONSOON_ONSET", sm)
 
             return AdvisoryOutput(
                 risk_level=risk_lvl,
@@ -147,16 +131,14 @@ class AdvisoryEngine:
                 growth_stage=stage,
                 title="🟢 Favorable Monsoon Onset Alert",
                 message=f"Monsoon onset probability is favorable ({prob:.0f}%) over the next {horizon} days.",
-                primary_action=f"Prepare land and seed stocks for {crop_name} {stage.lower()} as soil moisture conditions settle.",
-                supporting_actions=[
-                    "Finalize seed treatment and land preparation",
-                    "Verify field drainage readiness before sowing"
-                ],
+                primary_action=primary,
+                supporting_actions=supp,
                 reasoning=f"Monsoon Onset probability ({prob:.0f}%) is high with low break-spell conflict.",
                 advisory_code="ONSET_FAVORABLE"
             )
 
         # PRIORITY 5: ROUTINE MONITORING (LOW / MODERATE RISK)
+        primary, supp = generate_crop_stage_action(crop_name, stage, "ROUTINE", sm)
         return AdvisoryOutput(
             risk_level="LOW",
             event_type="ROUTINE",
@@ -168,11 +150,8 @@ class AdvisoryEngine:
             growth_stage=stage,
             title="ℹ️ Routine Weather Monitoring",
             message="No immediate extreme weather risk detected over the next 7–14 days.",
-            primary_action=f"Continue standard field practices for {crop_name} ({stage}).",
-            supporting_actions=[
-                "Maintain routine field inspections",
-                "Check weekly weather updates regularly"
-            ],
+            primary_action=primary,
+            supporting_actions=supp,
             reasoning="All event probabilities remain below high alert thresholds.",
             advisory_code="ROUTINE_MONITORING"
         )
