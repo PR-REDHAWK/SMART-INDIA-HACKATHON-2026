@@ -8,6 +8,7 @@ import ForecastOutlook from "./components/dashboard/ForecastOutlook";
 import AdvisoryCard from "./components/dashboard/AdvisoryCard";
 import AdvisoryFeed from "./components/dashboard/AdvisoryFeed";
 import DeliveryChannels from "./components/dashboard/DeliveryChannels";
+import { LanguageProvider } from "./context/LanguageContext";
 
 // Import Sidebar pages
 import MapPage from "./components/pages/MapPage";
@@ -16,7 +17,7 @@ import ModelPage from "./components/pages/ModelPage";
 import AdvisoryPage from "./components/pages/AdvisoryPage";
 import SettingsPage from "./components/pages/SettingsPage";
 
-function App() {
+function AppContent() {
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [regions, setRegions] = useState([]);
   const [selectedStateId, setSelectedStateId] = useState(null);
@@ -170,6 +171,14 @@ function App() {
         </main>
       </div>
     </>
+  );
+}
+
+function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   );
 }
 

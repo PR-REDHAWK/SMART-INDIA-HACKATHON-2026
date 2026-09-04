@@ -1,9 +1,10 @@
 import React from "react";
 import { Droplets, CloudRain, CloudLightning, ShieldCheck } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function KPIStrip({ selectedRegion, liveForecast }) {
+  const { t } = useLanguage();
   const probs = liveForecast?.probabilities;
-  const adv = liveForecast?.advisory;
 
   const onset14d = probs?.onset?.['14d'] ?? 30;
   const break14d = probs?.break_spell?.['14d'] ?? 100;
@@ -17,9 +18,9 @@ export default function KPIStrip({ selectedRegion, liveForecast }) {
         iconColor="var(--color-violet-500)"
         trendBg="rgba(139,124,246,0.14)"
         trendColor="var(--color-violet-500)"
-        trendText={onset14d > 50 ? "HIGH" : "MODERATE"}
+        trendText={onset14d > 50 ? t("trend_high", "HIGH") : t("trend_moderate", "MODERATE")}
         value={`${Math.round(onset14d)}%`}
-        label="14D Monsoon Onset Likelihood"
+        label={t("kpi_onset_label", "14D Monsoon Onset Likelihood")}
         barColor="var(--color-violet-500)"
         barWidth={`${Math.round(onset14d)}%`}
       />
@@ -29,9 +30,9 @@ export default function KPIStrip({ selectedRegion, liveForecast }) {
         iconColor="var(--color-rose-500)"
         trendBg={break14d > 50 ? "rgba(242,99,125,0.14)" : "rgba(52,214,196,0.14)"}
         trendColor={break14d > 50 ? "var(--color-rose-500)" : "var(--color-teal-500)"}
-        trendText={break14d > 50 ? "ELEVATED RISK" : "LOW RISK"}
+        trendText={break14d > 50 ? t("trend_elevated_risk", "ELEVATED RISK") : t("trend_low_risk", "LOW RISK")}
         value={`${Math.round(break14d)}%`}
-        label="14D Break Spell Risk"
+        label={t("kpi_break_label", "14D Break Spell Risk")}
         barColor="var(--color-rose-500)"
         barWidth={`${Math.round(break14d)}%`}
       />
@@ -41,9 +42,9 @@ export default function KPIStrip({ selectedRegion, liveForecast }) {
         iconColor="var(--color-amber-500)"
         trendBg={heavy14d > 50 ? "rgba(245,158,11,0.14)" : "rgba(52,214,196,0.14)"}
         trendColor={heavy14d > 50 ? "var(--color-amber-500)" : "var(--color-teal-500)"}
-        trendText={heavy14d > 50 ? "WARNING" : "LOW RISK"}
+        trendText={heavy14d > 50 ? t("trend_warning", "WARNING") : t("trend_low_risk", "LOW RISK")}
         value={`${Math.round(heavy14d)}%`}
-        label="14D Heavy Rain Likelihood"
+        label={t("kpi_heavy_label", "14D Heavy Rain Likelihood")}
         barColor="var(--color-amber-500)"
         barWidth={`${Math.round(heavy14d)}%`}
       />
@@ -53,9 +54,9 @@ export default function KPIStrip({ selectedRegion, liveForecast }) {
         iconColor="var(--color-teal-500)"
         trendBg="rgba(52,214,196,0.14)"
         trendColor="var(--color-teal-500)"
-        trendText="VERIFIED"
+        trendText={t("trend_verified", "VERIFIED")}
         value="88%"
-        label="Phase 3B Isotonic Consensus"
+        label={t("kpi_confidence_label", "Phase 3B Isotonic Consensus")}
         barColor="var(--color-teal-500)"
         barWidth="88%"
       />

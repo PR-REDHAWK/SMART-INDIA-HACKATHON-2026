@@ -1,22 +1,34 @@
 import React from "react";
 import { TriangleAlert, Sprout, Wind, Droplet, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function AdvisoryCard({ liveForecast }) {
+  const { language, t } = useLanguage();
   const adv = liveForecast?.advisory;
   const meta = liveForecast?.metadata;
 
-  const title = adv?.title || "Delay sowing by 3–4 days";
-  const primaryAction = adv?.primary_action || "A possible dry spell may follow expected rainfall. Delay rain-dependent sowing until sustained moisture settles.";
-  const supportingActions = adv?.supporting_actions || [
-    "Prepare supplemental irrigation facilities",
-    "Keep nursery beds covered and hydrated"
-  ];
-  const cropName = adv?.crop_name || "Rice";
-  const stage = adv?.growth_stage || "Sowing";
+  const code = adv?.advisory_code || "BREAK_SPELL_WARNING";
+  const rawTitle = adv?.title || "Delay sowing by 3–4 days";
+  const rawPrimaryAction = adv?.primary_action || "A possible dry spell may follow expected rainfall. Delay rain-dependent sowing until sustained moisture settles.";
+  const supportingActions = adv?.supporting_actions || [];
+
+  // Translate advisory title and action based on advisory code
+  const title = t(`code_${code}_title`, rawTitle);
+  const primaryAction = t(`code_${code}_action`, rawPrimaryAction);
+
+  const rawCrop = adv?.crop_name || "Rice";
+  const rawStage = adv?.growth_stage || "Sowing";
+
+  const cropName = t(`crop_${rawCrop.toLowerCase()}`, rawCrop);
+  const stage = t(`stage_${rawStage.toLowerCase()}`, rawStage);
+
   const riskLevel = adv?.risk_level || "HIGH";
   const isFalseOnset = adv?.false_onset_risk || false;
   const isDirectMatch = meta?.is_direct_match ?? true;
   const resolvedState = meta?.resolved_state ?? "Uttar Pradesh";
+
+  // Translate Risk Badge
+  const translatedRiskLevel = t(`risk_${riskLevel.toLowerCase()}`, `${riskLevel} RISK`);
 
   return (
     <div className="glass-panel p-[24px] relative overflow-hidden bg-gradient-to-br from-[rgba(245,158,11,0.05)] to-transparent">
@@ -26,12 +38,12 @@ export default function AdvisoryCard({ liveForecast }) {
       <div className="font-mono text-[10.5px] tracking-[.14em] uppercase text-amber-600 font-semibold mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {isFalseOnset ? <ShieldAlert size={14} className="text-rose-500" /> : <TriangleAlert size={14} />}
-          <span>Phase 6 Agricultural Advisory</span>
+          <span>{t("advisory_phase6_title", "Phase 6 Agricultural Advisory")}</span>
         </div>
         <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
           riskLevel === 'HIGH' || riskLevel === 'VERY_HIGH' ? 'bg-rose-500/20 text-rose-600' : 'bg-amber-500/20 text-amber-600'
         }`}>
-          {riskLevel} RISK
+          {translatedRiskLevel}
         </span>
       </div>
       
@@ -65,13 +77,13 @@ export default function AdvisoryCard({ liveForecast }) {
           <div className="w-7 h-7 rounded-lg bg-[rgba(139,124,246,0.18)] text-violet-500 flex items-center justify-center">
             <Droplet size={14} />
           </div>
-          Soil Moist: 25%
+          {t("metric_soil_moist", "Soil Moist")}: 25%
         </div>
         <div className="flex items-center gap-2 text-[13px] text-text-hi font-medium">
           <div className="w-7 h-7 rounded-lg bg-[rgba(245,158,11,0.15)] text-amber-600 flex items-center justify-center">
             <Wind size={14} />
           </div>
-          {isDirectMatch ? "Direct Phase 3B Model" : `Regional Baseline (${resolvedState})`}
+          {isDirectMatch ? t("direct_model", "Direct Phase 3B Model") : `${t("regional_baseline", "Regional Baseline")} (${resolvedState})`}
         </div>
       </div>
     </div>
