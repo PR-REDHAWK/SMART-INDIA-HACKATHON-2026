@@ -15,13 +15,15 @@ export default function AdvisoryCard({ liveForecast }) {
   const [selectedCrop, setSelectedCrop] = useState("Rice");
   const [selectedStage, setSelectedStage] = useState("Sowing");
 
+  const popularCrops = ["Rice", "Wheat", "Maize", "Cotton", "Soybean", "Sugarcane", "Mustard"];
+
   const code = adv?.advisory_code || "BREAK_SPELL_WARNING";
   const rawTitle = adv?.title || "Delay sowing by 3–4 days";
   const rawPrimaryAction = adv?.primary_action || "A possible dry spell may follow expected rainfall. Delay rain-dependent sowing until sustained moisture settles.";
   
   // Crop & Stage specific advice lookup
-  const cropStageKey = `adv_${selectedCrop.toLowerCase()}_${selectedStage.toLowerCase()}`;
-  const customCropAction = t(cropStageKey, null);
+  const cropKey = `adv_${selectedCrop.toLowerCase().replace(/[^a-z0-9]/g, "_")}_${selectedStage.toLowerCase()}`;
+  const customCropAction = t(cropKey, null);
 
   // Translate advisory title and action
   const title = t(`code_${code}_title`, rawTitle);
@@ -32,7 +34,7 @@ export default function AdvisoryCard({ liveForecast }) {
     t("adv_action_2", "Keep nursery beds covered and hydrated")
   ];
 
-  const cropName = t(`crop_${selectedCrop.toLowerCase()}`, selectedCrop);
+  const cropName = t(`crop_${selectedCrop.toLowerCase().replace(/[^a-z0-9]/g, "_")}`, selectedCrop);
   const stage = t(`stage_${selectedStage.toLowerCase()}`, selectedStage);
 
   const riskLevel = adv?.risk_level || "HIGH";
@@ -95,7 +97,7 @@ export default function AdvisoryCard({ liveForecast }) {
             <span className="font-mono text-[10px] text-text-lo uppercase flex items-center gap-1">
               <Filter size={11} className="text-amber-500" /> {t("select_crop_label", "Crop:")}
             </span>
-            {["Rice", "Maize", "Cotton", "Soybean"].map((c) => (
+            {popularCrops.map((c) => (
               <button
                 key={c}
                 onClick={() => setSelectedCrop(c)}
@@ -106,7 +108,7 @@ export default function AdvisoryCard({ liveForecast }) {
                     : "bg-glass-fill border-glass-borderSoft text-text-mid hover:text-text-hi"
                 )}
               >
-                {t(`crop_${c.toLowerCase()}`, c)}
+                {t(`crop_${c.toLowerCase().replace(/[^a-z0-9]/g, "_")}`, c)}
               </button>
             ))}
           </div>
@@ -115,7 +117,7 @@ export default function AdvisoryCard({ liveForecast }) {
             <span className="font-mono text-[10px] text-text-lo uppercase flex items-center gap-1">
               <Sprout size={11} className="text-teal-500" /> {t("select_stage_label", "Stage:")}
             </span>
-            {["Sowing", "Vegetative", "Flowering"].map((s) => (
+            {["Sowing", "Vegetative", "Flowering", "Harvest"].map((s) => (
               <button
                 key={s}
                 onClick={() => setSelectedStage(s)}

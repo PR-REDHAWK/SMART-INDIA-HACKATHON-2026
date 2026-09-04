@@ -83,3 +83,37 @@ def get_map_forecasts(db: Session = Depends(get_db)):
 def get_active_advisories(db: Session = Depends(get_db)):
     """Fetch all active advisories, sorted by newest first"""
     return db.query(Advisory).order_by(Advisory.created_at.desc()).all()
+
+@router.get("/crops")
+def get_supported_crops(state: Optional[str] = Query(None, description="Optional state name filter")):
+    """
+    Returns supported crops derived from official Indian state crop dataset.
+    """
+    import os, json
+    catalog_path = os.path.join(os.path.dirname(__file__), "..", "..", "advisory", "state_crops_catalog.json")
+    if os.path.exists(catalog_path):
+        try:
+            with open(catalog_path, "r", encoding="utf-8") as f:
+                catalog = json.load(f)
+            if state and state in catalog:
+                return {
+                    "state": state,
+                    "crops": catalog[state]["crops"],
+                    "seasons": catalog[state]["seasons"]
+                }
+            all_crops = set()
+            for s, data in catalog.items():
+                all_crops.update(data["crops"])
+            return {
+                "state": "ALL",
+                "crops": sorted(list(all_crops)),
+                "total_states": len(catalog)
+            }
+        except Exception as e:
+            pass
+
+    return {
+        "state": "DEFAULT",
+        "crops": ["Rice", "Wheat", "Maize", "Cotton", "Soybean", "Sugarcane", "Gram", "Tur (Pigeon Pea)", "Groundnut", "Mustard", "Bajra", "Jowar", "Potato", "Onion"]
+    }
+

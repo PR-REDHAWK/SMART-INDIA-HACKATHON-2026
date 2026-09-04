@@ -25,6 +25,9 @@ export default function AdvisoryPage({
   const [activeScenario, setActiveScenario] = useState("LIVE");
   const [crop, setCrop] = useState("Rice");
   const [stage, setStage] = useState("Sowing");
+  const [availableCrops, setAvailableCrops] = useState([
+    "Rice", "Wheat", "Maize", "Cotton", "Soybean", "Sugarcane", "Gram", "Tur (Pigeon Pea)", "Groundnut", "Mustard", "Bajra", "Jowar", "Potato", "Onion"
+  ]);
 
   useEffect(() => {
     fetch('/api/v1/advisories')
@@ -40,6 +43,25 @@ export default function AdvisoryPage({
   const locationName = selectedDistrict 
     ? `${selectedDistrict.name}, ${selectedState ? selectedState.name : ""}` 
     : (selectedState ? selectedState.name : (liveForecast?.metadata?.resolved_state || "Uttar Pradesh"));
+
+  // Dynamic Crop fetch for selected State from Kaggle state-crop dataset
+  useEffect(() => {
+    const stateName = selectedState ? selectedState.name : "Uttar Pradesh";
+    fetch(`/api/v1/crops?state=${encodeURIComponent(stateName)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.crops && data.crops.length > 0) {
+          setAvailableCrops(data.crops);
+        }
+      })
+      .catch(err => console.error("Failed to load state crops:", err));
+  }, [selectedStateId]);
+
+  // Format crop options for SearchableSelect
+  const cropSelectOptions = availableCrops.map((c) => ({
+    id: c,
+    name: t(`crop_${c.toLowerCase().replace(/[^a-z0-9]/g, "_")}`, c)
+  }));
 
   // Filter alerts by region if applicable
   const filteredAdvisories = selectedRegion && selectedRegion.id
@@ -97,8 +119,8 @@ export default function AdvisoryPage({
         timeline7Days: "Dry Spell Window Begins",
         timeline14Days: "Sustained Dry Spell"
       };
-    } else { // LIVE PIPELINE DEFAULT (DYNAMIC LOCATION BASED)
-      const cropKey = `adv_${crop.toLowerCase()}_${stage.toLowerCase()}`;
+    } else { // LIVE PIPELINE DEFAULT (DYNAMIC LOCATION & CROP BASED)
+      const cropKey = `adv_${crop.toLowerCase().replace(/[^a-z0-9]/g, "_")}_${stage.toLowerCase()}`;
       const cropAction = t(cropKey, null);
 
       const liveBreakProb = liveForecast?.predictions?.calibrated_p_break_14d !== undefined
@@ -149,7 +171,8 @@ export default function AdvisoryPage({
       stop();
       return;
     }
-    const textToSpeak = `${locationName}. ${activeContent.title}. ${activeContent.action}`;
+    const cropDisplay = t(`crop_${crop.toLowerCase().replace(/[^a-z0-9]/g, "_")}`, crop);
+    const textToSpeak = `${locationName}. ${cropDisplay} advisory. ${activeContent.title}. ${activeContent.action}`;
     speak(textToSpeak, language);
   };
 
@@ -245,15 +268,18 @@ export default function AdvisoryPage({
           </div>
         </div>
 
-        {/* Row 2: Crop & Stage Selectors */}
-        <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-glass-borderSoft">
-          <div className="flex items-center gap-2">
-            <Sprout size={14} className="text-teal-500 shrink-0" />
-            <span className="font-mono text-[10.5px] text-text-lo uppercase tracking-[.06em]">
-              {t("select_crop_label", "Crop:")}
-            </span>
+        {/* Row 2: Dynamic Crop & Stage Selectors */}
+        <div className="flex items-center justify-between flex-wrap gap-4 pb-3 border-b border-glass-borderSoft">
+          {/* Dynamic Crop Selection Section */}
+          <div className="flex items-center gap-3 flex-wrap flex-1 min-w-[320px]">
+            <div className="flex items-center gap-1.5 text-teal-500 font-mono text-[10.5px] uppercase tracking-[.06em] font-semibold">
+              <Sprout size={15} className="shrink-0" />
+              <span>{t("select_crop_label", "Crop:")}</span>
+            </div>
+
+            {/* Quick Pills for top popular crops in selected state */}
             <div className="flex gap-1.5 flex-wrap">
-              {["Rice", "Maize", "Cotton", "Soybean"].map((c) => (
+              {availableCrops.slice(0, 5).map((c) => (
                 <button
                   key={c}
                   onClick={() => setCrop(c)}
@@ -264,18 +290,29 @@ export default function AdvisoryPage({
                       : "bg-glass-fill2 border-glass-borderSoft text-text-mid hover:text-text-hi"
                   )}
                 >
-                  {t(`crop_${c.toLowerCase()}`, c)}
+                  {t(`crop_${c.toLowerCase().replace(/[^a-z0-9]/g, "_")}`, c)}
                 </button>
               ))}
             </div>
+
+            {/* Searchable Select for ALL crops in state */}
+            <div className="w-52">
+              <SearchableSelect
+                options={cropSelectOptions}
+                value={crop}
+                onChange={(val) => setCrop(val)}
+                placeholder={`Search ${availableCrops.length}+ crops...`}
+              />
+            </div>
           </div>
 
+          {/* Growth Stage Selector */}
           <div className="flex items-center gap-2">
             <span className="font-mono text-[10.5px] text-text-lo uppercase tracking-[.06em]">
               {t("select_stage_label", "Stage:")}
             </span>
             <div className="flex gap-1.5 flex-wrap">
-              {["Sowing", "Vegetative", "Flowering"].map((s) => (
+              {["Sowing", "Vegetative", "Flowering", "Harvest"].map((s) => (
                 <button
                   key={s}
                   onClick={() => setStage(s)}
@@ -337,20 +374,20 @@ export default function AdvisoryPage({
                 <AlertTriangle size={14} />
                 {activeContent.badge}
               </div>
-              <h2 className="font-display font-bold text-[22px] text-text-hi tracking-wide mb-3 leading-tight uppercase animate-fadeIn" key={`title-${activeScenario}-${selectedStateId}-${selectedDistrictId}`}>
+              <h2 className="font-display font-bold text-[22px] text-text-hi tracking-wide mb-3 leading-tight uppercase animate-fadeIn" key={`title-${activeScenario}-${crop}-${stage}-${selectedStateId}-${selectedDistrictId}`}>
                 {activeContent.title}
               </h2>
-              <p className="text-[14px] text-text-mid leading-relaxed mb-6 animate-fadeIn" key={`action-${activeScenario}-${selectedStateId}-${selectedDistrictId}`}>
+              <p className="text-[14px] text-text-mid leading-relaxed mb-6 animate-fadeIn" key={`action-${activeScenario}-${crop}-${stage}-${selectedStateId}-${selectedDistrictId}`}>
                 {activeContent.action}
               </p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pt-5 border-t border-glass-borderSoft">
               <AdvisorySpec label="Location" val={locationName} highlight />
-              <AdvisorySpec label="Crop" val={t(`crop_${crop.toLowerCase()}`, crop)} />
+              <AdvisorySpec label="Crop" val={t(`crop_${crop.toLowerCase().replace(/[^a-z0-9]/g, "_")}`, crop)} highlight />
               <AdvisorySpec label="Break Prob." val={activeContent.breakProb} />
               <AdvisorySpec label="Soil Moisture" val={activeContent.soilMoist} />
-              <AdvisorySpec label="Confidence" val={activeContent.confidence} highlight />
+              <AdvisorySpec label="Confidence" val={activeContent.confidence} />
             </div>
           </div>
 
@@ -400,7 +437,7 @@ export default function AdvisoryPage({
         {/* Right Side: Interactive Decision Timeline */}
         <div className="glass-panel p-5.5 flex flex-col justify-between min-h-[400px]">
           <div>
-            <span className="panel-label">Advisory Decision Timeline ({locationName} - {activeScenario})</span>
+            <span className="panel-label">Advisory Decision Timeline ({crop} - {locationName})</span>
             
             <div className="relative mt-8 ml-2 flex flex-col gap-8">
               {/* Vertical line connector */}
@@ -414,7 +451,7 @@ export default function AdvisoryPage({
           </div>
 
           <div className="mt-8 pt-5 border-t border-glass-borderSoft text-center text-text-lo text-[11px] font-mono leading-relaxed">
-            * advisories compiled by combining global ENSO models, regional weather, and crop stages for {locationName}.
+            * advisories compiled by combining global ENSO models, regional weather, and crop stages for {crop} in {locationName}.
           </div>
         </div>
 
