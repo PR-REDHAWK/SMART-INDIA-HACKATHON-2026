@@ -87,8 +87,11 @@ export const translations = {
 
     // Crops & Stages
     crop_rice: "Rice",
+    crop_wheat: "Wheat",
     crop_maize: "Maize",
     crop_cotton: "Cotton",
+    crop_sugarcane: "Sugarcane",
+    crop_pulses: "Pulses",
     crop_soybean: "Soybean",
     stage_sowing: "Sowing",
     stage_establishment: "Establishment",
@@ -109,7 +112,24 @@ export const translations = {
     data_page_title: "Climate Data Sources & Meteorological Inputs",
     model_page_title: "Phase 3B Machine Learning Model Architecture",
     advisory_page_title: "Phase 6 Agricultural Advisory System Rules",
-    settings_page_title: "System Settings & Configuration"
+    
+    // Settings Page
+    settings_title: "SETTINGS",
+    settings_subtitle: "Customize your Monsoon Intelligence experience",
+    default_location: "Default Location",
+    crop_preferences: "Crop Preferences",
+    primary_crop: "Primary Crop",
+    alert_notifications: "Alert Notifications",
+    heavy_rain_alerts: "Heavy Rainfall Alerts",
+    dry_spell_alerts: "Dry Spell Alerts",
+    onset_alerts: "Monsoon Onset Alerts",
+    irrigation_recs: "Irrigation Recommendations",
+    preferences_display: "Preferences & Display",
+    app_language: "Application Language",
+    dashboard_density: "Dashboard Density",
+    tech_info: "Show Technical Climate Info",
+    save_settings: "Save Preferences",
+    settings_saved: "Settings Saved Successfully!"
   },
   hi: {
     // Topbar & Header
@@ -199,8 +219,11 @@ export const translations = {
 
     // Crops & Stages
     crop_rice: "धान / चावल",
+    crop_wheat: "गेहूं",
     crop_maize: "मक्का",
     crop_cotton: "कपास",
+    crop_sugarcane: "गन्ना",
+    crop_pulses: "दलहन",
     crop_soybean: "सोयाबीन",
     stage_sowing: "बुआई अवस्था",
     stage_establishment: "अंकुरण अवस्था",
@@ -221,6 +244,23 @@ export const translations = {
     data_page_title: "जलवायु डेटा स्रोत और मौसम विज्ञान इनपुट",
     model_page_title: "फेज 3B मशीन लर्निंग मॉडल आर्किटेक्चर",
     advisory_page_title: "फेज 6 कृषि सलाह नियम प्रणाली",
-    settings_page_title: "सिस्टम सेटिंग्स और कॉन्फ़िगरेशन"
+
+    // Settings Page
+    settings_title: "सेटिंग्स",
+    settings_subtitle: "अपने मानसून इंटेलिजेंस अनुभव को अनुकूलित करें",
+    default_location: "डिफ़ॉल्ट स्थान",
+    crop_preferences: "फसल प्राथमिकताएं",
+    primary_crop: "प्राथमिक फसल",
+    alert_notifications: "चेतावनी सूचनाएं",
+    heavy_rain_alerts: "भारी बारिश की चेतावनियां",
+    dry_spell_alerts: "सूखा काल (Break) की चेतावनियां",
+    onset_alerts: "मानसून आगमन की चेतावनियां",
+    irrigation_recs: "सिंचाई सिफारिशें",
+    preferences_display: "प्राथमिकताएं और प्रदर्शन",
+    app_language: "एप्लिकेशन भाषा",
+    dashboard_density: "डैशबोर्ड घनत्व",
+    tech_info: "तकनीकी जलवायु जानकारी दिखाएं",
+    save_settings: "प्राथमिकताएं सहेजें",
+    settings_saved: "सेटिंग्स सफलतापूर्वक सहेजी गईं!"
   }
 };
