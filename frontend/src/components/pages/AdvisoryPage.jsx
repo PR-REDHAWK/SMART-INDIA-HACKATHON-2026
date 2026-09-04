@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { AlertTriangle, Calendar, Sprout, Droplets, ShieldAlert, Sparkles, ChevronDown, ChevronUp, Filter, Volume2, VolumeX } from "lucide-react";
+import { AlertTriangle, Calendar, Sprout, Droplets, ShieldAlert, Sparkles, ChevronDown, ChevronUp, Filter, Volume2, VolumeX, MapPin } from "lucide-react";
 import clsx from "clsx";
 import { useLanguage } from "../../context/LanguageContext";
 import { useTextToSpeech } from "../../hooks/useTextToSpeech";
+import SearchableSelect from "../common/SearchableSelect";
 
-export default function AdvisoryPage() {
+export default function AdvisoryPage({
+  states = [],
+  districts = [],
+  selectedStateId,
+  selectedDistrictId,
+  onStateChange,
+  onDistrictChange,
+  selectedRegion,
+  liveForecast
+}) {
   const { language, setLanguage, t } = useLanguage();
   const { speak, stop, isSpeaking } = useTextToSpeech();
 
@@ -23,9 +33,22 @@ export default function AdvisoryPage() {
       .catch(err => console.error(err));
   }, []);
 
-  // Cap displayed alerts to top 3 items unless user clicks 'Show More'
+  // Derive Location Name
+  const selectedState = states.find((s) => String(s.id) === String(selectedStateId));
+  const selectedDistrict = districts.find((d) => String(d.id) === String(selectedDistrictId));
+
+  const locationName = selectedDistrict 
+    ? `${selectedDistrict.name}, ${selectedState ? selectedState.name : ""}` 
+    : (selectedState ? selectedState.name : (liveForecast?.metadata?.resolved_state || "Uttar Pradesh"));
+
+  // Filter alerts by region if applicable
+  const filteredAdvisories = selectedRegion && selectedRegion.id
+    ? liveAdvisories.filter(adv => !adv.region_id || adv.region_id === selectedRegion.id)
+    : liveAdvisories;
+  const displayedAdvisoriesList = filteredAdvisories.length > 0 ? filteredAdvisories : liveAdvisories;
+
   const maxAlertCap = 3;
-  const displayedAdvisories = showAllAlerts ? liveAdvisories : liveAdvisories.slice(0, maxAlertCap);
+  const displayedAdvisories = showAllAlerts ? displayedAdvisoriesList : displayedAdvisoriesList.slice(0, maxAlertCap);
 
   // Scenario specifics logic
   const getScenarioContent = () => {
@@ -74,19 +97,44 @@ export default function AdvisoryPage() {
         timeline7Days: "Dry Spell Window Begins",
         timeline14Days: "Sustained Dry Spell"
       };
-    } else { // LIVE PIPELINE DEFAULT
+    } else { // LIVE PIPELINE DEFAULT (DYNAMIC LOCATION BASED)
       const cropKey = `adv_${crop.toLowerCase()}_${stage.toLowerCase()}`;
       const cropAction = t(cropKey, null);
+
+      const liveBreakProb = liveForecast?.predictions?.calibrated_p_break_14d !== undefined
+        ? `${Math.round(liveForecast.predictions.calibrated_p_break_14d * 100)}%`
+        : (liveForecast?.predictions?.P_break_14d !== undefined 
+            ? `${Math.round(liveForecast.predictions.P_break_14d * 100)}%`
+            : "71%");
+
+      const liveSoilMoist = liveForecast?.metadata?.soil_moisture_pct !== undefined
+        ? `${liveForecast.metadata.soil_moisture_pct}%`
+        : (liveForecast?.inputs?.soil_moisture_pct !== undefined
+            ? `${liveForecast.inputs.soil_moisture_pct}%`
+            : "25%");
+
+      const liveConfidence = liveForecast?.metadata?.is_direct_match
+        ? "VERY HIGH (DIRECT)"
+        : "HIGH (REGIONAL)";
+
+      const advCode = liveForecast?.advisory?.advisory_code || "BREAK_SPELL_WARNING";
+      const rawTitle = liveForecast?.advisory?.title || "DELAY SOWING BY 3–4 DAYS";
+      const rawAction = liveForecast?.advisory?.primary_action || "A possible dry spell may follow expected rainfall. Delay rain-dependent sowing until sustained moisture settles.";
+
       return {
-        badge: "ACTION REQUIRED",
-        badgeColor: "border-amber-500 bg-gradient-to-r from-amber-500/5 to-transparent",
-        title: t("code_BREAK_SPELL_WARNING_title", "DELAY SOWING BY 3–4 DAYS"),
-        reason: t("code_BREAK_SPELL_WARNING_msg", "A possible rainfall event may be followed by a prolonged dry spell. Sowing prematurely could risk germination failure."),
-        action: cropAction || t("code_BREAK_SPELL_WARNING_action", "A possible dry spell may follow expected rainfall. Delay rain-dependent sowing until sustained moisture settles."),
-        breakProb: "71%",
-        soilMoist: "31%",
-        confidence: "HIGH",
-        timelineToday: t("timelineToday", "Monitor conditions"),
+        badge: `${liveForecast?.advisory?.risk_level || "ACTION"} REQUIRED`,
+        badgeColor: liveForecast?.advisory?.risk_level === "HIGH" || liveForecast?.advisory?.risk_level === "VERY_HIGH"
+          ? "border-rose-500 bg-gradient-to-r from-rose-500/10 to-transparent"
+          : "border-amber-500 bg-gradient-to-r from-amber-500/5 to-transparent",
+        title: t(`code_${advCode}_title`, rawTitle),
+        reason: liveForecast?.advisory?.false_onset_risk 
+          ? t("code_FALSE_ONSET_WARNING_msg", "Monsoon onset appears likely, but break-spell risk remains high over the next 14 days.")
+          : t(`code_${advCode}_msg`, "A possible rainfall event may be followed by a prolonged dry spell. Sowing prematurely could risk germination failure."),
+        action: cropAction || t(`code_${advCode}_action`, rawAction),
+        breakProb: liveBreakProb,
+        soilMoist: liveSoilMoist,
+        confidence: liveConfidence,
+        timelineToday: t("timelineToday", "Monitor local conditions"),
         timeline3Days: t("timeline3Days", "Avoid premature sowing"),
         timeline7Days: t("timeline7Days", "Expected rainfall window"),
         timeline14Days: t("timeline14Days", "Possible dry spell")
@@ -101,7 +149,7 @@ export default function AdvisoryPage() {
       stop();
       return;
     }
-    const textToSpeak = `${activeContent.title}. ${activeContent.action}`;
+    const textToSpeak = `${locationName}. ${activeContent.title}. ${activeContent.action}`;
     speak(textToSpeak, language);
   };
 
@@ -161,35 +209,117 @@ export default function AdvisoryPage() {
         </div>
       </div>
 
-      {/* Interactive Climate Scenario Simulator Bar */}
-      <div className="glass-panel p-4 flex flex-col gap-2.5">
-        <div className="flex items-center gap-2">
-          <Filter size={14} className="text-violet-500 shrink-0" />
+      {/* Interactive Location, Crop, Stage & Climate Scenario Bar */}
+      <div className="glass-panel p-4 flex flex-col gap-4">
+        {/* Row 1: Interactive Location Selector */}
+        <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-glass-borderSoft">
+          <div className="flex items-center gap-2 text-violet-500 font-mono text-[11px] uppercase tracking-[.08em] font-semibold">
+            <MapPin size={15} className="shrink-0" />
+            <span>{t("select_location_label", "Select Location:")}</span>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap flex-1 max-w-xl">
+            {/* State Select */}
+            <div className="w-48">
+              <SearchableSelect
+                options={states}
+                value={selectedStateId}
+                onChange={onStateChange}
+                placeholder={t("select_state", "Select State")}
+              />
+            </div>
+            {/* District Select */}
+            <div className="w-48">
+              <SearchableSelect
+                options={districts}
+                value={selectedDistrictId}
+                onChange={onDistrictChange}
+                placeholder={t("select_district", "Select District")}
+              />
+            </div>
+          </div>
+
+          <div className="bg-teal-500/10 border border-teal-500/20 text-teal-600 px-3 py-1 rounded-full font-mono text-[11px] font-semibold flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse"></span>
+            <span>{t("active_region", "Active Region:")} {locationName}</span>
+          </div>
+        </div>
+
+        {/* Row 2: Crop & Stage Selectors */}
+        <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-glass-borderSoft">
+          <div className="flex items-center gap-2">
+            <Sprout size={14} className="text-teal-500 shrink-0" />
+            <span className="font-mono text-[10.5px] text-text-lo uppercase tracking-[.06em]">
+              {t("select_crop_label", "Crop:")}
+            </span>
+            <div className="flex gap-1.5 flex-wrap">
+              {["Rice", "Maize", "Cotton", "Soybean"].map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setCrop(c)}
+                  className={clsx(
+                    "font-mono text-[10.5px] px-3 py-1 rounded-full border cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95",
+                    crop === c
+                      ? "bg-teal-500 text-white font-semibold border-transparent shadow-sm"
+                      : "bg-glass-fill2 border-glass-borderSoft text-text-mid hover:text-text-hi"
+                  )}
+                >
+                  {t(`crop_${c.toLowerCase()}`, c)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[10.5px] text-text-lo uppercase tracking-[.06em]">
+              {t("select_stage_label", "Stage:")}
+            </span>
+            <div className="flex gap-1.5 flex-wrap">
+              {["Sowing", "Vegetative", "Flowering"].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setStage(s)}
+                  className={clsx(
+                    "font-mono text-[10.5px] px-3 py-1 rounded-full border cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95",
+                    stage === s
+                      ? "bg-violet-500 text-white font-semibold border-transparent shadow-sm"
+                      : "bg-glass-fill2 border-glass-borderSoft text-text-mid hover:text-text-hi"
+                  )}
+                >
+                  {t(`stage_${s.toLowerCase()}`, s)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Row 3: Scenario Simulator */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Filter size={14} className="text-amber-500 shrink-0" />
           <span className="font-mono text-[10.5px] text-text-lo uppercase tracking-[.06em]">
             {t("scenario_sim_label", "Simulate Climate Risk Scenario:")}
           </span>
-        </div>
-
-        <div className="flex gap-2 flex-wrap font-mono text-[10.5px]">
-          {[
-            { id: "LIVE", label: "LIVE PIPELINE" },
-            { id: "FALSE_ONSET", label: "FALSE-ONSET RISK" },
-            { id: "BREAK_SPELL", label: "HIGH DRY-SPELL RISK" },
-            { id: "HEAVY_RAIN", label: "HEAVY RAINFALL ALERT" }
-          ].map((sc) => (
-            <button
-              key={sc.id}
-              onClick={() => setActiveScenario(sc.id)}
-              className={clsx(
-                "px-3 py-1.5 rounded-full border cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95",
-                activeScenario === sc.id 
-                  ? "bg-violet-500 text-white font-semibold border-transparent shadow-sm" 
-                  : "bg-glass-fill2 border-glass-borderSoft text-text-mid hover:text-text-hi"
-              )}
-            >
-              {sc.label}
-            </button>
-          ))}
+          <div className="flex gap-2 flex-wrap font-mono text-[10.5px]">
+            {[
+              { id: "LIVE", label: `LIVE PIPELINE (${locationName.toUpperCase()})` },
+              { id: "FALSE_ONSET", label: "FALSE-ONSET RISK" },
+              { id: "BREAK_SPELL", label: "HIGH DRY-SPELL RISK" },
+              { id: "HEAVY_RAIN", label: "HEAVY RAINFALL ALERT" }
+            ].map((sc) => (
+              <button
+                key={sc.id}
+                onClick={() => setActiveScenario(sc.id)}
+                className={clsx(
+                  "px-3 py-1 rounded-full border cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95",
+                  activeScenario === sc.id 
+                    ? "bg-violet-500 text-white font-semibold border-transparent shadow-sm" 
+                    : "bg-glass-fill2 border-glass-borderSoft text-text-mid hover:text-text-hi"
+                )}
+              >
+                {sc.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -207,16 +337,16 @@ export default function AdvisoryPage() {
                 <AlertTriangle size={14} />
                 {activeContent.badge}
               </div>
-              <h2 className="font-display font-bold text-[22px] text-text-hi tracking-wide mb-3 leading-tight uppercase animate-fadeIn" key={`title-${activeScenario}`}>
+              <h2 className="font-display font-bold text-[22px] text-text-hi tracking-wide mb-3 leading-tight uppercase animate-fadeIn" key={`title-${activeScenario}-${selectedStateId}-${selectedDistrictId}`}>
                 {activeContent.title}
               </h2>
-              <p className="text-[14px] text-text-mid leading-relaxed mb-6 animate-fadeIn" key={`action-${activeScenario}`}>
+              <p className="text-[14px] text-text-mid leading-relaxed mb-6 animate-fadeIn" key={`action-${activeScenario}-${selectedStateId}-${selectedDistrictId}`}>
                 {activeContent.action}
               </p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pt-5 border-t border-glass-borderSoft">
-              <AdvisorySpec label="Location" val="Meerut" />
+              <AdvisorySpec label="Location" val={locationName} highlight />
               <AdvisorySpec label="Crop" val={t(`crop_${crop.toLowerCase()}`, crop)} />
               <AdvisorySpec label="Break Prob." val={activeContent.breakProb} />
               <AdvisorySpec label="Soil Moisture" val={activeContent.soilMoist} />
@@ -225,18 +355,18 @@ export default function AdvisoryPage() {
           </div>
 
           {/* Live API Advisories — Capped at top 3 items */}
-          {liveAdvisories.length > 0 && (
+          {displayedAdvisoriesList.length > 0 && (
             <div className="flex flex-col gap-3 mt-1 mb-1">
               <div className="flex justify-between items-center">
                 <span className="font-mono text-[10px] tracking-[.1em] text-violet-500 uppercase">
-                  {t("liveAlerts", "LIVE DATABASE ALERTS")} ({displayedAdvisories.length} OF {liveAdvisories.length})
+                  {t("liveAlerts", "LIVE DATABASE ALERTS FOR")} {locationName.toUpperCase()} ({displayedAdvisories.length} OF {displayedAdvisoriesList.length})
                 </span>
-                {liveAdvisories.length > maxAlertCap && (
+                {displayedAdvisoriesList.length > maxAlertCap && (
                   <button
                     onClick={() => setShowAllAlerts(!showAllAlerts)}
                     className="font-mono text-[10.5px] text-teal-600 hover:text-teal-700 flex items-center gap-1 cursor-pointer transition-colors"
                   >
-                    <span>{showAllAlerts ? t("showLess", "Show Less") : `${t("showMore", "Show More Alerts")} (${liveAdvisories.length - maxAlertCap}+)`}</span>
+                    <span>{showAllAlerts ? t("showLess", "Show Less") : `${t("showMore", "Show More Alerts")} (${displayedAdvisoriesList.length - maxAlertCap}+)`}</span>
                     {showAllAlerts ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                   </button>
                 )}
@@ -245,7 +375,10 @@ export default function AdvisoryPage() {
               {displayedAdvisories.map(adv => (
                 <div key={adv.id} className="glass-panel p-4 border-l-4 border-rose-500 flex flex-col gap-2">
                   <div className="flex justify-between items-center">
-                    <span className="font-mono text-[10px] bg-rose-500/10 text-rose-600 px-2 py-0.5 rounded-full uppercase">{adv.advisory_type} - {adv.crop}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[10px] bg-rose-500/10 text-rose-600 px-2 py-0.5 rounded-full uppercase">{adv.advisory_type} - {adv.crop}</span>
+                      <span className="font-mono text-[9px] bg-teal-500/10 text-teal-600 px-2 py-0.5 rounded-full uppercase">📍 {locationName}</span>
+                    </div>
                     <span className="font-mono text-[9px] text-text-lo">{new Date(adv.created_at).toLocaleDateString()}</span>
                   </div>
                   <h4 className="font-display font-semibold text-text-hi text-[15px]">{adv.title}</h4>
@@ -267,7 +400,7 @@ export default function AdvisoryPage() {
         {/* Right Side: Interactive Decision Timeline */}
         <div className="glass-panel p-5.5 flex flex-col justify-between min-h-[400px]">
           <div>
-            <span className="panel-label">Advisory Decision Timeline ({activeScenario})</span>
+            <span className="panel-label">Advisory Decision Timeline ({locationName} - {activeScenario})</span>
             
             <div className="relative mt-8 ml-2 flex flex-col gap-8">
               {/* Vertical line connector */}
@@ -281,7 +414,7 @@ export default function AdvisoryPage() {
           </div>
 
           <div className="mt-8 pt-5 border-t border-glass-borderSoft text-center text-text-lo text-[11px] font-mono leading-relaxed">
-            * advisories compiled by combining global ENSO models, regional weather, and crop stages.
+            * advisories compiled by combining global ENSO models, regional weather, and crop stages for {locationName}.
           </div>
         </div>
 

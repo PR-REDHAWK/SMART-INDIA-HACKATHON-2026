@@ -140,7 +140,18 @@ function AppContent() {
       case "model":
         return <ModelPage />;
       case "advisory":
-        return <AdvisoryPage />;
+        return (
+          <AdvisoryPage 
+            states={states}
+            districts={districts}
+            selectedStateId={selectedStateId}
+            selectedDistrictId={selectedDistrictId}
+            onStateChange={handleStateChange}
+            onDistrictChange={handleDistrictChange}
+            selectedRegion={selectedDistrict || selectedState}
+            liveForecast={liveForecast}
+          />
+        );
       case "settings":
         return (
           <SettingsPage 

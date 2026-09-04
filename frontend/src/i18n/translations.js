@@ -70,6 +70,8 @@ export const translations = {
     risk_low: "LOW RISK",
     select_crop_label: "Select Crop:",
     select_stage_label: "Growth Stage:",
+    select_location_label: "Select Location:",
+    active_region: "Active Region:",
     scenario_sim_label: "Simulate Climate Scenario:",
 
     // Advisory Codes & Fallbacks
@@ -239,6 +241,8 @@ export const translations = {
     risk_low: "कम जोखिम",
     select_crop_label: "फसल चुनें:",
     select_stage_label: "वृद्धि अवस्था:",
+    select_location_label: "स्थान चुनें:",
+    active_region: "सक्रिय क्षेत्र:",
     scenario_sim_label: "जलवायु परिदृश्य का परीक्षण करें:",
 
     // Advisory Codes & Fallbacks
