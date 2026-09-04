@@ -140,7 +140,7 @@ export default function ModelPage() {
           <ArchitectureNode 
             step="3" 
             title="Feature Matrix" 
-            type="30 Features <= T" 
+            type="30 Features &le; T" 
             active={activeStage === 3}
             onClick={() => setActiveStage(3)}
           />
@@ -154,7 +154,7 @@ export default function ModelPage() {
           <ArchitectureNode 
             step="5" 
             title="Isotonic Calibrator" 
-            type="ECE < 0.04" 
+            type="ECE &lt; 0.04" 
             active={activeStage === 5}
             onClick={() => setActiveStage(5)}
           />
@@ -305,7 +305,7 @@ export default function ModelPage() {
           <div className="grid grid-cols-2 gap-3 pt-3 border-t border-glass-borderSoft font-mono">
             <div className="p-2.5 rounded-lg bg-glass-fill2 border border-glass-borderSoft flex flex-col gap-0.5">
               <span className="text-[9.5px] text-text-lo uppercase">{t("ece_score", "ECE Error")}</span>
-              <span className="text-[15px] font-bold text-teal-600">0.032 <span className="text-[10px] font-normal text-text-mid">(< 0.05 Target)</span></span>
+              <span className="text-[15px] font-bold text-teal-600">0.032 <span className="text-[10px] font-normal text-text-mid">(&lt; 0.05 Target)</span></span>
             </div>
             <div className="p-2.5 rounded-lg bg-glass-fill2 border border-glass-borderSoft flex flex-col gap-0.5">
               <span className="text-[9.5px] text-text-lo uppercase">{t("brier_score", "Brier Score")}</span>
