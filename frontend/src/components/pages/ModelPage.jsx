@@ -49,33 +49,124 @@ const STAGE_DETAILS = {
   }
 };
 
-// Feature importance weights across targets
-const FEATURE_IMPORTANCES = {
-  "14D_BREAK SPELL": [
-    { label: "Rainfall 14D Sum", weight: 32, color: "bg-violet-500" },
-    { label: "Consecutive Dry Days Streak", weight: 26, color: "bg-rose-500" },
-    { label: "IOD Dipole Index", weight: 18, color: "bg-amber-500" },
-    { label: "MJO Phase & Amplitude", weight: 12, color: "bg-teal-500" },
-    { label: "Nino 3.4 SST Anomaly", weight: 8, color: "bg-indigo-400" },
-    { label: "Seasonal Cosine Day-of-Year", weight: 4, color: "bg-slate-400" },
-  ],
-  "7D_ONSET": [
-    { label: "Rainfall 7D Sum & Trend", weight: 35, color: "bg-teal-500" },
-    { label: "Nino 3.4 SST Anomaly", weight: 22, color: "bg-violet-500" },
-    { label: "MJO Phase & Amplitude", weight: 18, color: "bg-indigo-500" },
-    { label: "Consecutive Rain Days", weight: 14, color: "bg-emerald-500" },
-    { label: "IOD Dipole Index", weight: 7, color: "bg-amber-500" },
-    { label: "Seasonal Sine Day-of-Year", weight: 4, color: "bg-slate-400" },
-  ],
-  "14D_HEAVY RAIN": [
-    { label: "Rainfall 14D Max & Sum", weight: 38, color: "bg-amber-500" },
-    { label: "MJO Amplitude (Phase 3/4)", weight: 24, color: "bg-teal-500" },
-    { label: "Rainfall Trend (7D vs Prev 7D)", weight: 16, color: "bg-violet-500" },
-    { label: "IOD Dipole Index", weight: 11, color: "bg-rose-500" },
-    { label: "SOI Anomaly", weight: 7, color: "bg-indigo-400" },
-    { label: "Seasonal Cosine Day-of-Year", weight: 4, color: "bg-slate-400" },
-  ]
-};
+// Comprehensive feature importance resolver covering all 12 model targets
+function getFeatureImportances(horizon, eventType) {
+  if (eventType === "ONSET") {
+    if (horizon === "7D") {
+      return [
+        { label: "Rainfall 7D Sum & Trend", weight: 36, color: "bg-teal-500" },
+        { label: "Nino 3.4 SST Anomaly", weight: 22, color: "bg-violet-500" },
+        { label: "MJO Phase & Amplitude", weight: 18, color: "bg-indigo-500" },
+        { label: "Consecutive Rain Days", weight: 12, color: "bg-emerald-500" },
+        { label: "IOD Dipole Index", weight: 8, color: "bg-amber-500" },
+        { label: "Seasonal Sine Day-of-Year", weight: 4, color: "bg-slate-400" },
+      ];
+    } else if (horizon === "14D") {
+      return [
+        { label: "Nino 3.4 SST Anomaly", weight: 30, color: "bg-violet-500" },
+        { label: "Rainfall 14D Sum", weight: 25, color: "bg-teal-500" },
+        { label: "MJO Phase & Amplitude", weight: 20, color: "bg-indigo-500" },
+        { label: "IOD Dipole Index", weight: 13, color: "bg-amber-500" },
+        { label: "Consecutive Rain Days", weight: 8, color: "bg-emerald-500" },
+        { label: "Seasonal Sine Day-of-Year", weight: 4, color: "bg-slate-400" },
+      ];
+    } else if (horizon === "21D") {
+      return [
+        { label: "Nino 3.4 SST Anomaly", weight: 34, color: "bg-violet-500" },
+        { label: "IOD Dipole Index", weight: 24, color: "bg-amber-500" },
+        { label: "MJO Phase & Amplitude", weight: 18, color: "bg-indigo-500" },
+        { label: "Rainfall 30D Sum", weight: 12, color: "bg-teal-500" },
+        { label: "ONIE / RONI Index", weight: 8, color: "bg-rose-500" },
+        { label: "Seasonal Cosine Day-of-Year", weight: 4, color: "bg-slate-400" },
+      ];
+    } else { // 30D
+      return [
+        { label: "Nino 3.4 SST Anomaly", weight: 38, color: "bg-violet-500" },
+        { label: "IOD Dipole Index", weight: 26, color: "bg-amber-500" },
+        { label: "ONIE / RONI Index", weight: 16, color: "bg-rose-500" },
+        { label: "MJO Phase & Amplitude", weight: 10, color: "bg-indigo-500" },
+        { label: "Rainfall 30D Mean", weight: 6, color: "bg-teal-500" },
+        { label: "Seasonal Sine Day-of-Year", weight: 4, color: "bg-slate-400" },
+      ];
+    }
+  } else if (eventType === "BREAK SPELL") {
+    if (horizon === "7D") {
+      return [
+        { label: "Consecutive Dry Days Streak", weight: 38, color: "bg-rose-500" },
+        { label: "Rainfall 7D Sum", weight: 28, color: "bg-violet-500" },
+        { label: "MJO Amplitude (Phase 1/8)", weight: 16, color: "bg-teal-500" },
+        { label: "IOD Dipole Index", weight: 10, color: "bg-amber-500" },
+        { label: "Nino 3.4 SST Anomaly", weight: 5, color: "bg-indigo-400" },
+        { label: "Seasonal Cosine Day-of-Year", weight: 3, color: "bg-slate-400" },
+      ];
+    } else if (horizon === "14D") {
+      return [
+        { label: "Rainfall 14D Sum", weight: 32, color: "bg-violet-500" },
+        { label: "Consecutive Dry Days Streak", weight: 26, color: "bg-rose-500" },
+        { label: "IOD Dipole Index", weight: 18, color: "bg-amber-500" },
+        { label: "MJO Phase & Amplitude", weight: 12, color: "bg-teal-500" },
+        { label: "Nino 3.4 SST Anomaly", weight: 8, color: "bg-indigo-400" },
+        { label: "Seasonal Cosine Day-of-Year", weight: 4, color: "bg-slate-400" },
+      ];
+    } else if (horizon === "21D") {
+      return [
+        { label: "IOD Dipole Index", weight: 30, color: "bg-amber-500" },
+        { label: "Rainfall 30D Sum", weight: 24, color: "bg-violet-500" },
+        { label: "Consecutive Dry Days", weight: 20, color: "bg-rose-500" },
+        { label: "Nino 3.4 SST Anomaly", weight: 14, color: "bg-indigo-400" },
+        { label: "MJO Amplitude", weight: 8, color: "bg-teal-500" },
+        { label: "Seasonal Cosine Day-of-Year", weight: 4, color: "bg-slate-400" },
+      ];
+    } else { // 30D
+      return [
+        { label: "IOD Dipole Index", weight: 34, color: "bg-amber-500" },
+        { label: "Nino 3.4 SST Anomaly", weight: 28, color: "bg-violet-500" },
+        { label: "Rainfall 30D Mean", weight: 18, color: "bg-rose-500" },
+        { label: "MJO Phase & Amplitude", weight: 11, color: "bg-teal-500" },
+        { label: "ONIE Index", weight: 5, color: "bg-indigo-400" },
+        { label: "Seasonal Cosine Day-of-Year", weight: 4, color: "bg-slate-400" },
+      ];
+    }
+  } else { // HEAVY RAIN
+    if (horizon === "7D") {
+      return [
+        { label: "Rainfall 7D Max & Trend", weight: 42, color: "bg-amber-500" },
+        { label: "MJO Amplitude (Phase 3/4)", weight: 22, color: "bg-teal-500" },
+        { label: "Consecutive Rain Days", weight: 16, color: "bg-emerald-500" },
+        { label: "Rainfall 3D Sum", weight: 10, color: "bg-violet-500" },
+        { label: "IOD Dipole Index", weight: 6, color: "bg-rose-500" },
+        { label: "Seasonal Cosine Day-of-Year", weight: 4, color: "bg-slate-400" },
+      ];
+    } else if (horizon === "14D") {
+      return [
+        { label: "Rainfall 14D Max & Sum", weight: 38, color: "bg-amber-500" },
+        { label: "MJO Amplitude (Phase 3/4)", weight: 24, color: "bg-teal-500" },
+        { label: "Rainfall Trend (7D vs Prev 7D)", weight: 16, color: "bg-violet-500" },
+        { label: "IOD Dipole Index", weight: 11, color: "bg-rose-500" },
+        { label: "SOI Anomaly", weight: 7, color: "bg-indigo-400" },
+        { label: "Seasonal Cosine Day-of-Year", weight: 4, color: "bg-slate-400" },
+      ];
+    } else if (horizon === "21D") {
+      return [
+        { label: "MJO Amplitude (Phase 3/4)", weight: 32, color: "bg-teal-500" },
+        { label: "Rainfall 30D Max", weight: 26, color: "bg-amber-500" },
+        { label: "IOD Dipole Index", weight: 18, color: "bg-rose-500" },
+        { label: "Nino 3.4 SST Anomaly", weight: 12, color: "bg-violet-500" },
+        { label: "SOI Anomaly", weight: 8, color: "bg-indigo-400" },
+        { label: "Seasonal Cosine Day-of-Year", weight: 4, color: "bg-slate-400" },
+      ];
+    } else { // 30D
+      return [
+        { label: "MJO Phase & Amplitude", weight: 30, color: "bg-teal-500" },
+        { label: "IOD Dipole Index", weight: 26, color: "bg-rose-500" },
+        { label: "Nino 3.4 SST Anomaly", weight: 22, color: "bg-violet-500" },
+        { label: "Rainfall 30D Max", weight: 12, color: "bg-amber-500" },
+        { label: "SOI Anomaly", weight: 6, color: "bg-indigo-400" },
+        { label: "Seasonal Cosine Day-of-Year", weight: 4, color: "bg-slate-400" },
+      ];
+    }
+  }
+}
 
 export default function ModelPage() {
   const { t } = useLanguage();
@@ -85,8 +176,7 @@ export default function ModelPage() {
   const [eventType, setEventType] = useState("BREAK SPELL");
   const [activeStage, setActiveStage] = useState(5); // Default Isotonic Stage 5
 
-  const keyStr = `${horizon}_${eventType}`;
-  const importances = FEATURE_IMPORTANCES[keyStr] || FEATURE_IMPORTANCES["14D_BREAK SPELL"];
+  const importances = getFeatureImportances(horizon, eventType);
   const stageInfo = STAGE_DETAILS[activeStage];
 
   return (
@@ -239,12 +329,12 @@ export default function ModelPage() {
               <BarChart2 size={16} className="text-violet-500" />
               {t("feature_contribution", "Feature Contribution & Importance")}
             </h3>
-            <span className="font-mono text-[11px] text-teal-600 font-bold bg-teal-500/10 px-2.5 py-0.5 rounded-full">
+            <span className="font-mono text-[11px] text-teal-600 font-bold bg-teal-500/10 px-2.5 py-0.5 rounded-full animate-fadeIn" key={`${horizon}-${eventType}`}>
               {horizon} {eventType} Model
             </span>
           </div>
 
-          <div className="flex flex-col gap-3.5 font-sans mt-2">
+          <div className="flex flex-col gap-3.5 font-sans mt-2" key={`list-${horizon}-${eventType}`}>
             {importances.map((item, idx) => (
               <ImportanceBar key={idx} label={item.label} percentage={item.weight} color={item.color} />
             ))}
@@ -374,7 +464,7 @@ function ImportanceBar({ label, percentage, color }) {
         <span className="font-semibold text-text-hi">{percentage}%</span>
       </div>
       <div className="h-2 rounded-full bg-black/5 overflow-hidden">
-        <div className={`h-full rounded-full ${color} transition-all duration-300`} style={{ width: `${percentage}%` }}></div>
+        <div className={`h-full rounded-full ${color} transition-all duration-500 ease-out`} style={{ width: `${percentage}%` }}></div>
       </div>
     </div>
   );
