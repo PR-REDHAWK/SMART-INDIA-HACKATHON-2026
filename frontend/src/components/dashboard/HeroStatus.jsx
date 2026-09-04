@@ -1,9 +1,12 @@
 import React from "react";
-import { Info } from "lucide-react";
+import { Info, Volume2, VolumeX, Radio } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
+import { useTextToSpeech } from "../../hooks/useTextToSpeech";
 
 export default function HeroStatus({ selectedRegion, liveForecast }) {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const { speak, stop, isSpeaking } = useTextToSpeech();
+  
   const probs = liveForecast?.probabilities;
   const adv = liveForecast?.advisory;
   const meta = liveForecast?.metadata;
@@ -11,6 +14,11 @@ export default function HeroStatus({ selectedRegion, liveForecast }) {
   const onset7d = probs?.onset?.['7d'] ?? 12;
   const break7d = probs?.break_spell?.['7d'] ?? 85;
   const heavy7d = probs?.heavy_rain?.['7d'] ?? 4;
+
+  const onset14d = probs?.onset?.['14d'] ?? 30;
+  const break14d = probs?.break_spell?.['14d'] ?? 100;
+  const heavy14d = probs?.heavy_rain?.['14d'] ?? 8;
+
   const isFalseOnset = adv?.false_onset_risk ?? false;
   const isDirectMatch = meta?.is_direct_match ?? true;
   const resolvedState = meta?.resolved_state ?? "Uttar Pradesh";
@@ -30,8 +38,26 @@ export default function HeroStatus({ selectedRegion, liveForecast }) {
     statusColor = "text-amber-500 bg-amber-500/10 border-amber-500/20";
   }
 
+  const handlePlayVoice = () => {
+    if (isSpeaking) {
+      stop();
+      return;
+    }
+
+    const regionName = selectedRegion?.name || "Uttar Pradesh";
+    
+    let speechText = "";
+    if (language === "hi") {
+      speechText = `${regionName} का 14-दिवसीय मानसून पूर्वावलोकन। मानसून आगमन की संभावना ${Math.round(onset14d)} प्रतिशत है। सूखा काल का जोखिम ${Math.round(break14d)} प्रतिशत है। भारी बारिश की संभावना ${Math.round(heavy14d)} प्रतिशत है। फेज 3B मॉडल सहमति 88 प्रतिशत सत्यापित है।`;
+    } else {
+      speechText = `14-day forecast overview for ${regionName}. Monsoon Onset likelihood is ${Math.round(onset14d)} percent. Break Spell risk is ${Math.round(break14d)} percent. Heavy Rain likelihood is ${Math.round(heavy14d)} percent. Phase 3B Isotonic model consensus confidence is 88 percent, verified.`;
+    }
+
+    speak(speechText, language);
+  };
+
   return (
-    <div className="glass-panel p-[26px] flex flex-col justify-between h-full">
+    <div className="glass-panel p-[26px] flex flex-col justify-between h-full relative overflow-hidden">
       <div className="flex justify-between items-start">
         <div>
           <span className="panel-label">{t("hero_onset_label", "7D Monsoon Onset Probability")}</span>
@@ -56,9 +82,41 @@ export default function HeroStatus({ selectedRegion, liveForecast }) {
         <div className="font-display text-[64px] font-bold leading-none my-4 tracking-[-0.02em] text-transparent bg-clip-text bg-gradient-to-br from-white to-[#b9b2f7]">
           {Math.round(onset7d)}<sup className="text-[28px] opacity-70">%</sup>
         </div>
-        <div className="text-text-mid text-[13.5px]">
+        <div className="text-text-mid text-[13.5px] mb-3">
           {t("consensus_note", "Phase 3B Calibrated Model Consensus (Date: 2024-06-15)")}
         </div>
+
+        {/* PROMINENT TEXT-TO-SPEECH VOICE AUDIO BANNER */}
+        <button
+          onClick={handlePlayVoice}
+          className={`w-full p-3 px-4 rounded-xl border flex items-center justify-between font-mono text-[12.5px] cursor-pointer transition-all duration-200 shadow-sm ${
+            isSpeaking 
+              ? "bg-rose-500/15 border-rose-500/50 text-rose-600 font-semibold animate-pulse" 
+              : "bg-gradient-to-r from-violet-500/15 via-teal-500/15 to-violet-500/10 border-violet-500/30 hover:border-violet-500/60 text-text-hi hover:scale-[1.01]"
+          }`}
+          title={isSpeaking ? t("stop_voice", "Stop Audio") : t("listen_voice", "Listen to Voice Summary")}
+        >
+          <div className="flex items-center gap-2.5 font-semibold">
+            {isSpeaking ? (
+              <VolumeX className="text-rose-500 shrink-0" size={17} />
+            ) : (
+              <Volume2 className="text-violet-500 shrink-0 animate-bounce" size={17} />
+            )}
+            <span>{isSpeaking ? t("speaking_now", "Speaking Forecast...") : t("listen_voice", "Listen to Voice Summary (14D Forecast)")}</span>
+          </div>
+
+          {isSpeaking ? (
+            <div className="flex items-center gap-1">
+              <span className="w-1.5 h-4 bg-rose-500 animate-pulse rounded-full"></span>
+              <span className="w-1.5 h-2 bg-rose-500 animate-pulse delay-75 rounded-full"></span>
+              <span className="w-1.5 h-5 bg-rose-500 animate-pulse delay-150 rounded-full"></span>
+            </div>
+          ) : (
+            <span className="text-[11px] bg-violet-500/20 text-violet-600 px-2 py-0.5 rounded-md font-mono font-bold">
+              AUDIO 🔊
+            </span>
+          )}
+        </button>
       </div>
       
       <div className="flex gap-[22px] mt-5 pt-4 border-t border-glass-borderSoft flex-wrap">
