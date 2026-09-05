@@ -10,6 +10,8 @@ import AdvisoryFeed from "./components/dashboard/AdvisoryFeed";
 import DeliveryChannels from "./components/dashboard/DeliveryChannels";
 import { LanguageProvider } from "./context/LanguageContext";
 
+import { getApiUrl } from "./api/config";
+
 // Import Sidebar pages
 import MapPage from "./components/pages/MapPage";
 import DataSourcesPage from "./components/pages/DataSourcesPage";
@@ -27,7 +29,7 @@ function AppContent() {
 
   // Fetch live geographical context from database
   useEffect(() => {
-    fetch("/api/v1/regions")
+    fetch(getApiUrl("/api/v1/regions"))
       .then((res) => res.json())
       .then((data) => {
         setRegions(data);
@@ -53,7 +55,7 @@ function AppContent() {
     const selectedState = states.find((s) => s.id === selectedStateId);
     const stateName = selectedState ? selectedState.name : "Uttar Pradesh";
 
-    fetch(`/api/v1/forecast/live?state=${encodeURIComponent(stateName)}&prediction_date=2024-06-15&crop_name=Rice&growth_stage=Sowing&soil_moisture_pct=25.0`)
+    fetch(getApiUrl(`/api/v1/forecast/live?state=${encodeURIComponent(stateName)}&prediction_date=2024-06-15&crop_name=Rice&growth_stage=Sowing&soil_moisture_pct=25.0`))
       .then((res) => res.json())
       .then((data) => {
         if (data.status === "SUCCESS") {

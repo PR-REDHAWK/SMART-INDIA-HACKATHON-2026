@@ -3,6 +3,7 @@ import { TriangleAlert, Sprout, Wind, Droplet, ShieldAlert, CheckCircle2, Volume
 import clsx from "clsx";
 import { useLanguage } from "../../context/LanguageContext";
 import { useTextToSpeech } from "../../hooks/useTextToSpeech";
+import { getApiUrl } from "../../api/config";
 
 export default function AdvisoryCard({ liveForecast }) {
   const { language, t } = useLanguage();
@@ -20,7 +21,7 @@ export default function AdvisoryCard({ liveForecast }) {
 
   // Real-time API query whenever selected crop, growth stage, location, or language changes
   useEffect(() => {
-    fetch(`/api/v1/forecast/live?state=${encodeURIComponent(stateName)}&prediction_date=2024-06-15&crop_name=${encodeURIComponent(selectedCrop)}&growth_stage=${encodeURIComponent(selectedStage)}&soil_moisture_pct=25.0&lang=${encodeURIComponent(language)}`)
+    fetch(getApiUrl(`/api/v1/forecast/live?state=${encodeURIComponent(stateName)}&prediction_date=2024-06-15&crop_name=${encodeURIComponent(selectedCrop)}&growth_stage=${encodeURIComponent(selectedStage)}&soil_moisture_pct=25.0&lang=${encodeURIComponent(language)}`))
       .then((res) => res.json())
       .then((data) => {
         if (data.status === "SUCCESS") {

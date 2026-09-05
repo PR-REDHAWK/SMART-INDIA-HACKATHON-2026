@@ -3,6 +3,7 @@ import clsx from "clsx";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useLanguage } from "../../context/LanguageContext";
+import { getApiUrl } from "../../api/config";
 
 export default function MapPage({
   selectedStateId,
@@ -27,7 +28,7 @@ export default function MapPage({
 
   // 1. Fetch live data from FastAPI backend
   useEffect(() => {
-    fetch('/api/v1/regions')
+    fetch(getApiUrl('/api/v1/regions'))
       .then(res => res.json())
       .then(data => {
         const formattedRegions = data.map((r) => {

@@ -4,6 +4,7 @@ import clsx from "clsx";
 import { useLanguage } from "../../context/LanguageContext";
 import { useTextToSpeech } from "../../hooks/useTextToSpeech";
 import SearchableSelect from "../common/SearchableSelect";
+import { getApiUrl } from "../../api/config";
 
 export default function AdvisoryPage({
   states = [],
@@ -45,7 +46,7 @@ export default function AdvisoryPage({
   }, [liveForecast]);
 
   useEffect(() => {
-    fetch('/api/v1/advisories')
+    fetch(getApiUrl('/api/v1/advisories'))
       .then(res => res.json())
       .then(data => setLiveAdvisories(data))
       .catch(err => console.error(err));
@@ -62,7 +63,7 @@ export default function AdvisoryPage({
   // Dynamic Crop fetch for selected State from Kaggle state-crop dataset
   useEffect(() => {
     const stateName = selectedState ? selectedState.name : "Uttar Pradesh";
-    fetch(`/api/v1/crops?state=${encodeURIComponent(stateName)}`)
+    fetch(getApiUrl(`/api/v1/crops?state=${encodeURIComponent(stateName)}`))
       .then(res => res.json())
       .then(data => {
         if (data.crops && data.crops.length > 0) {
@@ -75,7 +76,7 @@ export default function AdvisoryPage({
   // Real-time API query when location, crop, growth stage, or language changes
   useEffect(() => {
     const stateName = selectedState ? selectedState.name : "Uttar Pradesh";
-    fetch(`/api/v1/forecast/live?state=${encodeURIComponent(stateName)}&prediction_date=2024-06-15&crop_name=${encodeURIComponent(crop)}&growth_stage=${encodeURIComponent(stage)}&soil_moisture_pct=25.0&lang=${encodeURIComponent(language)}`)
+    fetch(getApiUrl(`/api/v1/forecast/live?state=${encodeURIComponent(stateName)}&prediction_date=2024-06-15&crop_name=${encodeURIComponent(crop)}&growth_stage=${encodeURIComponent(stage)}&soil_moisture_pct=25.0&lang=${encodeURIComponent(language)}`))
       .then((res) => res.json())
       .then((data) => {
         if (data.status === "SUCCESS") {
