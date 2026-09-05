@@ -147,7 +147,7 @@ export default function AdvisoryPage({
       if (sLower.includes("sow") || sLower.includes("establis") || sLower.includes("germina")) {
         act = isHi
           ? `जलजमाव से बीज/पौध सड़न रोकने के लिए ${cropDisplay} की ${stageDisplay} उठी हुई क्यारियों/नालियों पर करें और जल निकासी दुरुस्त रखें।`
-          : `Postpone ${crop} ${stage.lower()} in low fields. Clear drainage channels to prevent seed/seedling rot.`;
+          : `Postpone ${crop} ${stage.toLowerCase()} in low fields. Clear drainage channels to prevent seed/seedling rot.`;
       } else if (sLower.includes("flower") || sLower.includes("fruit") || sLower.includes("grain") || sLower.includes("vegetat")) {
         act = isHi
           ? `जलभराव व फसल नुकसान से बचने के लिए ${cropDisplay} (${stageDisplay}) के खेत की जल निकासी नाली साफ करें।`
@@ -179,7 +179,7 @@ export default function AdvisoryPage({
       if (sLower.includes("sow") || sLower.includes("establis") || sLower.includes("germina")) {
         act = isHi
           ? `आसन्न सूखा काल के कारण ${cropDisplay} की ${stageDisplay} टालें। पूरक सिंचाई या ड्रिप का विकल्प तैयार रखें।`
-          : `Delay rain-dependent ${crop} ${stage.lower()} due to imminent dry spell. Prepare supplemental irrigation alternatives.`;
+          : `Delay rain-dependent ${crop} ${stage.toLowerCase()} due to imminent dry spell. Prepare supplemental irrigation alternatives.`;
       } else if (sLower.includes("flower") || sLower.includes("fruit") || sLower.includes("grain")) {
         act = isHi
           ? `अत्यंत संवेदनशील अवस्था: उपज क्षति और फूल/दाना झड़ने से रोकने के लिए ${cropDisplay} (${stageDisplay}) में सिंचाई करें।`
@@ -244,7 +244,7 @@ export default function AdvisoryPage({
     if (sLower.includes("sow") || sLower.includes("establis") || sLower.includes("germina")) {
       return {
         today: isHi ? `खेत तैयारी व नमी जांच (${cropDisplay})` : `Inspect ${crop} seedbed moisture`,
-        d3: isHi ? `बुआई कार्य योजना (${stageDisplay})` : `Schedule ${crop} ${stage.lower()} window`,
+        d3: isHi ? `बुआई कार्य योजना (${stageDisplay})` : `Schedule ${crop} ${stage.toLowerCase()} window`,
         d7: isHi ? `अंकुरण व पौध वृद्धि निगरानी` : `Monitor seedling emergence`,
         d14: isHi ? `शुरुआती सिंचाई व खरपतवार जांच` : `Assess early establishment`
       };
